@@ -2,6 +2,7 @@
  */
 
 #include "vmlinux.h"
+#include "record.h"
 
 #define __kernel_size_t
 #define __kernel_fsid_t
@@ -19,6 +20,12 @@
 #include <bpf/bpf_tracing.h>
 
 char _license[] SEC("license") = "GPL";
+
+struct {
+	__uint(type, BPF_MAP_TYPE_RINGBUF);
+	__uint(max_entries, 1 << 12);
+} ringbuf SEC(".maps");
+
 
 #define MAY_EXEC		0x00000001
 #define MAY_WRITE		0x00000002
@@ -82,13 +89,24 @@ int BPF_PROG(file_permission, struct file *file, int mask)
   if (is_inode_dir(file->f_inode)) {
     return 0;
   }
+
   current_task = (struct task_struct *)bpf_get_current_task_btf();
   int pid = current_task->pid;
 
   perms = file_mask_to_perms((file->f_inode)->i_mode, mask);
   
   if ((perms & (FILE__READ)) != 0) {
-    bpf_printk("read! pid: %d", pid);
+    // bpf_printk("read! inode uid: %u", file->f_inode->i_ino);
+    struct entry_t new_entry = {
+      .pid = pid,
+      .utime = current_task->utime,
+      .gtime = current_task->gtime,
+      .inode_inum = file->f_inode->i_ino,
+      .inode_uid = file->f_inode->i_uid.val,
+      .inode_guid = file->f_inode->i_gid.val,
+      .op = READ,
+    };
+    bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   } 
 
   return 0;
