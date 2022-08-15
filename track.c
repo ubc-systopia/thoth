@@ -91,14 +91,12 @@ int BPF_PROG(file_permission, struct file *file, int mask)
   }
 
   current_task = (struct task_struct *)bpf_get_current_task_btf();
-  int pid = current_task->pid;
 
   perms = file_mask_to_perms((file->f_inode)->i_mode, mask);
   
   if ((perms & (FILE__READ)) != 0) {
-    // bpf_printk("read! inode uid: %u", file->f_inode->i_ino);
     struct entry_t new_entry = {
-      .pid = pid,
+      .pid = current_task->pid,
       .utime = current_task->utime,
       .gtime = current_task->gtime,
       .inode_inum = file->f_inode->i_ino,
@@ -107,7 +105,34 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .op = READ,
     };
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
+  }
+  
+  if ((perms & (FILE__WRITE)) != 0) {
+    struct entry_t new_entry = {
+      .pid = current_task->pid,
+      .utime = current_task->utime,
+      .gtime = current_task->gtime,
+      .inode_inum = file->f_inode->i_ino,
+      .inode_uid = file->f_inode->i_uid.val,
+      .inode_guid = file->f_inode->i_gid.val,
+      .op = WRITE,
+    };
+    bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
+  }
+ 
+  if ((perms & (FILE__EXECUTE)) != 0) {
+    struct entry_t new_entry = {
+      .pid = current_task->pid,
+      .utime = current_task->utime,
+      .gtime = current_task->gtime,
+      .inode_inum = file->f_inode->i_ino,
+      .inode_uid = file->f_inode->i_uid.val,
+      .inode_guid = file->f_inode->i_gid.val,
+      .op = EXEC,
+    };
+    bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   } 
+
 
   return 0;
 }
