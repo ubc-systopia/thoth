@@ -1,7 +1,7 @@
 btf:
 	bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
 
-kern:
+track:
 	clang -O2 -Wall \
 	-target bpf -g -c track.c -o track.o
 
@@ -14,4 +14,4 @@ skel:
 	bpftool gen skeleton track.o > track.skel.h
 
 all:
-	btf kern skel
+	track skel user
