@@ -52,7 +52,7 @@ void spade_write_node_proc(int fd, struct entry_t *entry) {
   strncat(buf, inode, MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
   // end json
-  strncat(buf, "}\n", MAX_BUFFER_LEN);
+  strncat(buf, "}}\n", MAX_BUFFER_LEN);
   write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
@@ -96,7 +96,7 @@ void spade_write_node_file(int fd, struct entry_t *entry) {
   write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
-void spade_write_edge(int fd, struct entry_t *entry, enum operation op) {
+void spade_write_edge(int fd, struct entry_t *entry) {
   char buf[MAX_BUFFER_LEN];
   buf[0] = '\0';
   
@@ -106,6 +106,17 @@ void spade_write_edge(int fd, struct entry_t *entry, enum operation op) {
   sprintf(pid, "%u", entry->pid);
   char inode[32];
   sprintf(inode, "%u", entry->inode_inum);
+  char utime[32];
+  sprintf(utime, "%u", entry->utime);
+
+  char operation[32];
+  if (entry->op == READ) {
+    sprintf(operation, "%s", "read");
+  } else if (entry->op == WRITE) {
+    sprintf(operation, "%s", "write");
+  } else if (entry->op == EXEC) {
+    sprintf(operation, "%s", "execute");
+  }
 
   // start json
   strncat(buf, "{", MAX_BUFFER_LEN);
@@ -117,13 +128,13 @@ void spade_write_edge(int fd, struct entry_t *entry, enum operation op) {
   // to
   strncat(buf, "\"to\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, pid, MAX_BUFFER_LEN);
+  strncat(buf, inode, MAX_BUFFER_LEN);
   strncat(buf, "\",", MAX_BUFFER_LEN);
  
   // from
   strncat(buf, "\"from\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, inode, MAX_BUFFER_LEN);
+  strncat(buf, pid, MAX_BUFFER_LEN);
   strncat(buf, "\",", MAX_BUFFER_LEN);
   
   // annotations
@@ -131,12 +142,12 @@ void spade_write_edge(int fd, struct entry_t *entry, enum operation op) {
 
   strncat(buf, "\"operation\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, inode, MAX_BUFFER_LEN);
+  strncat(buf, operation, MAX_BUFFER_LEN);
   strncat(buf, "\",", MAX_BUFFER_LEN);
  
   strncat(buf, "\"utime\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, "5678", MAX_BUFFER_LEN);
+  strncat(buf, utime, MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
   
   // end json

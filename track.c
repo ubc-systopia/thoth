@@ -49,6 +49,7 @@ struct {
 #define DIR__WRITE              0x00000020UL
 #define DIR__READ               0x00000040UL
 
+// from profbpf project
 static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
 {
   uint32_t av = 0;
@@ -67,10 +68,10 @@ static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
       av |= FILE__WRITE;
     } else {
       if (mask & MAY_EXEC) {
-	av |= DIR__SEARCH;
+	      av |= DIR__SEARCH;
       }
       if (mask & MAY_WRITE) {
-	av |= DIR__WRITE;
+	      av |= DIR__WRITE;
       }
       if (mask & MAY_READ) {
         av |= DIR__READ;
@@ -89,6 +90,10 @@ int BPF_PROG(file_permission, struct file *file, int mask)
   if (is_inode_dir(file->f_inode)) {
     return 0;
   }
+
+  // Debug file name
+  bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
+  bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name); 
 
   current_task = (struct task_struct *)bpf_get_current_task_btf();
 
@@ -133,13 +138,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   } 
 
-
   return 0;
 }
 
-SEC("lsm/file_open")
-int BPF_PROG(file_open, struct file *file) 
-{
-  return 0;
-}
 
