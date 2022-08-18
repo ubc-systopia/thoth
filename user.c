@@ -21,6 +21,8 @@
 
 static int fd;
 
+static int tracking_inode = 5567;
+
 static void write_to_file(struct entry_t *entry) 
 {
   // should lock here
@@ -34,12 +36,10 @@ static int buf_process_entry(void *ctx, void *data, size_t len)
 {
   struct entry_t *read_entry = (struct entry_t *)data; 
 
-  if (read_entry->inode_inum == 2969) {
-    return 0;
+  if (read_entry->inode_inum == tracking_inode) {
+    write_to_file(read_entry);
   }
 
-  // save to log file
-  write_to_file(read_entry);
   return 0;
 }
 
@@ -62,7 +62,7 @@ int main(void)
   if (err != 0) {
     printf("Error attaching skeleton\r\n");
   }
-  fd = open("track.log", O_RDWR);
+  fd = open("/tmp/track.json", O_RDWR);
   if (fd < 0) {
     printf("error opening file\r\n");
   }
