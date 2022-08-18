@@ -48,9 +48,6 @@ void spade_write_node_proc(int fd, struct entry_t *entry) {
   strncat(buf, pid, MAX_BUFFER_LEN);
   strncat(buf, "\",", MAX_BUFFER_LEN);
  
-  strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, inode, MAX_BUFFER_LEN);
-  strncat(buf, "\"", MAX_BUFFER_LEN);
   // end json
   strncat(buf, "}}\n", MAX_BUFFER_LEN);
   write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
