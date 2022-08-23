@@ -1,7 +1,7 @@
 #ifndef __RECORD_H
 #define __RECORD_H
 
-#define PATH_MAX 64
+#define FILE_PATH_MAX 64
 
 enum operation {
   READ = 1,
@@ -16,8 +16,8 @@ struct entry_t {
   unsigned int inode_inum;
   int inode_uid;
   int inode_guid;
-  char file_name[PATH_MAX];
-  char parent_name[PATH_MAX];
+  char file_name[FILE_PATH_MAX];
+  char parent_name[FILE_PATH_MAX];
   enum operation op;
 };
 
