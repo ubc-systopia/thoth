@@ -19,13 +19,31 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
+#define INODE_MAX_ENTRY 256
+#define MAX_DIR_PATH 10
+
 char _license[] SEC("license") = "GPL";
+
+struct inode_elem {
+  uint32_t id;
+};
+
+// MAPS
 
 struct {
 	__uint(type, BPF_MAP_TYPE_RINGBUF);
 	__uint(max_entries, 1 << 12);
 } ringbuf SEC(".maps");
 
+struct {
+  __uint(type, BPF_MAP_TYPE_ARRAY);
+  __type(key, uint32_t);
+	__type(value, struct inode_elem);
+	__uint(max_entries, INODE_MAX_ENTRY);
+
+} inode_map SEC(".maps");
+
+// FILE MACROS
 
 #define MAY_EXEC		0x00000001
 #define MAY_WRITE		0x00000002
@@ -48,6 +66,8 @@ struct {
 #define DIR__SEARCH             0x00000010UL
 #define DIR__WRITE              0x00000020UL
 #define DIR__READ               0x00000040UL
+
+// FUNCTIONS
 
 // from profbpf project
 static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
@@ -81,6 +101,44 @@ static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
   return av;
 }
 
+// Check if inode is in the inode map
+static int inode_in_map(struct inode *inode) {
+
+  for (uint32_t i = 0; i < INODE_MAX_ENTRY; i++) {
+    uint32_t key = i;
+    struct inode_elem *val = bpf_map_lookup_elem(&inode_map, &key);
+    if (val == NULL) {
+      // log something about map not set-up
+      return 0;
+    }
+    if (val->id == 0) { // reached the end of the list
+      return 0;
+    }
+    if (val->id == inode->i_ino) {
+      return 1;
+    }
+  }
+  
+  return 0;
+}
+
+// check if inode is in a directory that we track
+static int in_tracking_dir(struct dentry *entry) {
+  struct dentry *d = entry;
+  int path_len = 0;
+  while (path_len < MAX_DIR_PATH && d != NULL) {
+    if (inode_in_map(d->d_inode) == 1) {
+       return 1;
+    }
+    if (d == d->d_parent) {
+      return 0;
+    }
+    d = d->d_parent;
+    path_len++;
+  }
+  return 0;
+}
+
 SEC("lsm/file_permission")
 int BPF_PROG(file_permission, struct file *file, int mask) 
 {
@@ -91,9 +149,13 @@ int BPF_PROG(file_permission, struct file *file, int mask)
     return 0;
   }
 
+  if (in_tracking_dir(file->f_path.dentry) == 0) {
+    return 0;
+  }
+
   // Debug file name
-  bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
-  bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name); 
+  // bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
+  // bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name); 
 
   current_task = (struct task_struct *)bpf_get_current_task_btf();
 

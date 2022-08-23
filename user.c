@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
+#include <bpf/bpf.h>
 
 #include "spade.c"
 #include "record.h"
@@ -22,6 +23,15 @@
 static int fd;
 
 static int tracking_inode = 5567;
+
+// Start with adding just one id into the map
+static void add_inode(struct track *skel, uint32_t index, uint64_t value) {
+  int map_fd;
+  uint64_t id;
+  map_fd = bpf_object__find_map_fd_by_name(skel->obj, "inode_map");
+  id = value;
+  bpf_map_update_elem(map_fd, &index, &id, BPF_ANY);
+}
 
 static void write_to_file(struct entry_t *entry) 
 {
@@ -35,10 +45,7 @@ static void write_to_file(struct entry_t *entry)
 static int buf_process_entry(void *ctx, void *data, size_t len)
 {
   struct entry_t *read_entry = (struct entry_t *)data; 
-
-  if (read_entry->inode_inum == tracking_inode) {
-    write_to_file(read_entry);
-  }
+  write_to_file(read_entry);
 
   return 0;
 }
@@ -56,12 +63,15 @@ int main(void)
     printf("Failed to load bpf skeleton");
     goto close_prog;
   }
+  
+  // add test inode number
+  add_inode(skel, 0, (uint64_t)tracking_inode);
 
   err = track__attach(skel);
-
   if (err != 0) {
     printf("Error attaching skeleton\r\n");
   }
+
   fd = open("/tmp/track.json", O_RDWR);
   if (fd < 0) {
     printf("error opening file\r\n");
