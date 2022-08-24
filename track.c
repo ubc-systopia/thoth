@@ -1,20 +1,13 @@
 /*
- * 
+ *
  * Author: Nichole Boufford <ncbouf@cs.ubc.ca>
  *
  * Copyright (C) 2022 University of British Columbia
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2, as
+ * published by the Free Software Foundation; either version 2 of the License,
+ * or (at your option) any later version.
  *
  */
 
@@ -114,7 +107,7 @@ static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
         av |= DIR__READ;
       }
     }
-  }  
+  }
   return av;
 }
 
@@ -135,7 +128,7 @@ static int inode_in_map(struct inode *inode) {
       return 1;
     }
   }
-  
+
   return 0;
 }
 
@@ -157,7 +150,7 @@ static int in_tracking_dir(struct dentry *entry) {
 }
 
 SEC("lsm/file_permission")
-int BPF_PROG(file_permission, struct file *file, int mask) 
+int BPF_PROG(file_permission, struct file *file, int mask)
 {
   struct task_struct *current_task;
   uint32_t perms;
@@ -172,12 +165,12 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 
   // Debug file name
   // bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
-  // bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name); 
+  // bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name);
 
   current_task = (struct task_struct *)bpf_get_current_task_btf();
 
   perms = file_mask_to_perms((file->f_inode)->i_mode, mask);
-  
+
   if ((perms & (FILE__READ)) != 0) {
     struct entry_t new_entry = {
       .pid = current_task->pid,
@@ -190,7 +183,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
     };
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
-  
+
   if ((perms & (FILE__WRITE)) != 0) {
     struct entry_t new_entry = {
       .pid = current_task->pid,
@@ -203,7 +196,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
     };
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
- 
+
   if ((perms & (FILE__EXECUTE)) != 0) {
     struct entry_t new_entry = {
       .pid = current_task->pid,
@@ -215,9 +208,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .op = EXEC,
     };
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
-  } 
+  }
 
   return 0;
 }
-
-
