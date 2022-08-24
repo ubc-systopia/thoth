@@ -1,5 +1,9 @@
 btf:
 	bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
+	cp -f include/kern/vmlinux.h .circleci/_vmlinux.h
+
+btf_circle:
+	cp -f .circleci/_vmlinux.h vmlinux.h
 
 track:
 	clang -O2 -Wall \
