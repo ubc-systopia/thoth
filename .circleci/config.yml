@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   build-test:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204:current
     resource_class: medium
     working_directory: ~/build
     steps:
@@ -19,6 +19,7 @@ jobs:
       - run: 'sudo apt-get install build-essential rsync libtool libncurses5-dev'
       - run: 'sudo apt-get install libncursesw5-dev bc pkg-config zsh libelf-dev'
       - run: 'sudo apt-get install bison flex binutils-dev gcc libinih-dev'
+      - run: 'sudo apt-get install bpftool'
       - run: 'make btf'
       - run: 'make all'
 
