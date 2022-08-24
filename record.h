@@ -1,5 +1,5 @@
 #/*
- * 
+ *
  * Author: Nichole Boufford <ncbouf@cs.ubc.ca>
  *
  * Copyright (C) 2022 University of British Columbia
@@ -18,7 +18,7 @@
  *
  */
 
-ifndef __RECORD_H
+#ifndef __RECORD_H
 #define __RECORD_H
 
 #define FILE_PATH_MAX 64
