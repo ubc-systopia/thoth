@@ -32,6 +32,8 @@ circle_build_kernel:
 	cd linux-stable/tools/lib/bpf && $(MAKE) all
 	cd linux-stable/tools/bpf/resolve_btfids && sudo $(MAKE) all
 	cd linux-stable/tools/bpf/bpftool && sudo $(MAKE) all
+	cd linux-stable/tools/lib/bpf && sudo $(MAKE) install
+	cd linux-stable/tools/bpf/bpftool && sudo $(MAKE) install
 	cd linux-stable && $(MAKE) clean
 	cd linux-stable && $(MAKE) mrproper
 
