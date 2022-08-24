@@ -54,4 +54,13 @@ user:
 skel:
 	bpftool gen skeleton track.o > track.skel.h
 
+uncrustify:
+	uncrustify -c uncrustify.cfg --replace record.h
+	uncrustify -c uncrustify.cfg --replace spade.c
+	uncrustify -c uncrustify.cfg --replace track.c
+	uncrustify -c uncrustify.cfg --replace user.c
+
+uncrustify_clean:
+	rm *backup*~
+
 all: track skel user
