@@ -20,7 +20,6 @@ jobs:
       - run: 'make circle_build_kernel'
       - run: 'make btf_circle'
       - run: 'make all'
-      - run: 'git status'
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows

@@ -63,4 +63,4 @@ uncrustify:
 uncrustify_clean:
 	rm *backup*~
 
-all: track skel user
+all: track skel user uncrustify uncrustify_clean
