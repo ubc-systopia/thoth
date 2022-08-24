@@ -13,7 +13,6 @@ jobs:
     steps:
       - checkout
       - run: 'apt-get update -qq --allow-releaseinfo-change'
-      - run: 'apt-get install -y linux-headers-generic'
       - run: 'apt-get install -y sudo rpm cpio'
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev'
       - run: 'apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
