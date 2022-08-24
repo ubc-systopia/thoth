@@ -6,8 +6,8 @@ version: 2.1
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   build-test:
-    machine:
-      image: ubuntu-2204:current
+    docker:
+      - image: kernelci/build-clang-16:latest
     resource_class: medium
     working_directory: ~/build
     steps:
