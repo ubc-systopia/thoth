@@ -7,19 +7,19 @@ version: 2.1
 jobs:
   build-test:
     docker:
-      - image: kernelci/build-clang-16:latest
+      - image: kernelci/build-clang-11:latest
     resource_class: medium
     working_directory: ~/build
     steps:
       - checkout
-      - run: 'sudo apt-get update -qq --allow-releaseinfo-change'
-      - run: 'sudo apt-get install -y clang'
-      - run: 'sudo apt-get install -y linux-headers-generic'
-      - run: 'sudo apt-get install -y sudo rpm cpio'
-      - run: 'sudo apt-get install -y build-essential rsync libtool libncurses5-dev'
-      - run: 'sudo apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
-      - run: 'sudo apt-get install -y bison flex binutils-dev gcc libinih-dev'
-      - run: 'sudo apt-get install -y bpftool'
+      - run: 'apt-get update -qq --allow-releaseinfo-change'
+      - run: 'apt-get install -y clang'
+      - run: 'apt-get install -y linux-headers-generic'
+      - run: 'apt-get install -y sudo rpm cpio'
+      - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev'
+      - run: 'apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
+      - run: 'apt-get install -y bison flex binutils-dev gcc libinih-dev'
+      - run: 'apt-get install -y bpftool'
       - run: 'make btf'
       - run: 'make all'
 
