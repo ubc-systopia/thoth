@@ -14,7 +14,6 @@ jobs:
       - checkout
       - run: 'sudo apt-get update -qq --allow-releaseinfo-change'
       - run: 'sudo apt install clang --install-suggests'
-      - run: 'sudo ln -s /usr/bin/clang-12 /usr/bin/clang'
       - run: 'sudo apt-get install linux-headers-generic'
       - run: 'sudo apt-get install sudo rpm cpio'
       - run: 'sudo apt-get install build-essential rsync libtool libncurses5-dev'
