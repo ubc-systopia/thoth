@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   build-test:
     docker:
-      - image: kernelci/build-clang-15:latest
+      - image: kernelci/build-clang-14:latest
     resource_class: xlarge
     working_directory: ~/build
     steps:
