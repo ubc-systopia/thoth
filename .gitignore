@@ -51,7 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-linux-stable/*
+linux-stable
 track.skel.h
 vmlinux.h
 user
