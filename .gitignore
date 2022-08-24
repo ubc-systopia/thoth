@@ -52,3 +52,6 @@ Mkfile.old
 dkms.conf
 
 linux-stable/*
+track.skel.h
+vmlinux.h
+user
