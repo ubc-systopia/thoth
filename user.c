@@ -22,7 +22,7 @@
 
 static int fd;
 
-static int tracking_inode = 5567;
+static int tracking_inode = 6148;
 
 // Start with adding just one id into the map
 static void add_inode(struct track *skel, uint32_t index, uint64_t value) {
@@ -50,11 +50,15 @@ static int buf_process_entry(void *ctx, void *data, size_t len)
   return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   struct track *skel = NULL;
   struct ring_buffer *ringbuf = NULL;
   int err, map_fd;
+
+  if (argc == 2) {
+    tracking_inode = (uint32_t)atoi(argv[1]);
+  } 
 
   printf("starting...\r\n");
 
