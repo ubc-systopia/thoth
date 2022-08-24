@@ -8,7 +8,7 @@ jobs:
   build-test:
     docker:
       - image: kernelci/build-clang-11:latest
-    resource_class: medium
+    resource_class: xlarge
     working_directory: ~/build
     steps:
       - checkout
