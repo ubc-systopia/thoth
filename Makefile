@@ -13,7 +13,6 @@ user:
 	clang -Wall user.c -o user.o -c
 	clang -o user user.o -lbpf
 
-
 skel:
 	bpftool gen skeleton track.o > track.skel.h
 

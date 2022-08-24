@@ -17,9 +17,8 @@ jobs:
       - run: 'apt-get install -y build-essential rsync libtool libncurses5-dev'
       - run: 'apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
       - run: 'apt-get install -y bison flex binutils-dev gcc libinih-dev'
-      - run: 'make track'
       - run: 'make btf_circle'
-      - run: 'make user'
+      - run: 'make all'
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
