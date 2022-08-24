@@ -5,13 +5,12 @@ track:
 	clang -O2 -Wall \
 	-target bpf -g -c track.c -o track.o
 
-user: 
+user:
 	clang -Wall user.c -o user.o -c
-	clang -o user user.o -lbpf 
-	
+	clang -o user user.o -lbpf
+
 
 skel:
 	bpftool gen skeleton track.o > track.skel.h
 
-all:
-	track skel user
+all: track skel user
