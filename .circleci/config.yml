@@ -19,7 +19,7 @@ jobs:
       - run: 'sudo apt-get install build-essential rsync libtool libncurses5-dev'
       - run: 'sudo apt-get install libncursesw5-dev bc pkg-config zsh libelf-dev'
       - run: 'sudo apt-get install bison flex binutils-dev gcc libinih-dev'
-      - run: 'make btf_circle'
+      - run: 'make btf'
       - run: 'make all'
 
 # Invoke jobs via workflows
