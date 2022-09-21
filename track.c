@@ -214,18 +214,20 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 }
 
 SEC("lsm/bprm_creds_for_exec")
-int BPF_PROG(bprm_creds_for_exec, struct linux_binrm *bprm) 
+int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm) 
 {
   struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
   struct entry_t new_entry = {
     .pid = current_task->pid,
     .utime = current_task->utime,
-    .gtime = curent_task->gtime,
+    .gtime = current_task->gtime,
     .inode_inum = bprm->executable->f_inode->i_ino,
     .inode_uid = bprm->executable->f_inode->i_uid.val,
     .inode_guid = bprm->executable->f_inode->i_gid.val,
     .op = EXEC,
-  }
+  };
 
-  bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t_, 0);
+  bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
+
+  return 0;
 }
