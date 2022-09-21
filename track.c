@@ -36,22 +36,33 @@ char _license[] SEC("license") = "GPL";
 
 struct inode_elem {
   uint32_t id;
+  uint8_t flag; 
+  struct bpf_spin_lock lock;
 };
 
 // MAPS
 
+// ring buffer
 struct {
 	__uint(type, BPF_MAP_TYPE_RINGBUF);
 	__uint(max_entries, 1 << 12);
 } ringbuf SEC(".maps");
 
+// list of tracking dir inodes
 struct {
   __uint(type, BPF_MAP_TYPE_ARRAY);
   __type(key, uint32_t);
 	__type(value, struct inode_elem);
 	__uint(max_entries, INODE_MAX_ENTRY);
-
 } inode_map SEC(".maps");
+
+// cache for inodes in tracking dir
+struct {
+  __uint(type, BPF_MAP_TYPE_INODE_STORAGE);
+  __uint(map_flags, BPF_F_NO_PREALLOC);
+  __type(key, uint32_t);
+  __type(value, struct inode_elem);
+} inode_storage_map SEC(".maps");
 
 // FILE MACROS
 
@@ -76,6 +87,18 @@ struct {
 #define DIR__SEARCH             0x00000010UL
 #define DIR__WRITE              0x00000020UL
 #define DIR__READ               0x00000040UL
+
+#define inode_check_flag(inode, bit)  ((inode->flag & (1 << bit)) == (1 << bit))
+#define inode_set_flag(inode, bit)    (inode->flag |= 1 << bit)
+#define inode_clear_flag(inode, bit)  (inode->flag &= ~(1 << bit))
+
+#define INIT_BIT 0
+#define inode_set_init(inode)         inode_set_flag(inode, INIT_BIT)
+#define inode_is_init(inode)          inode_check_flag(inode, INIT_BIT)
+
+#define TRACKED_BIT 1
+#define inode_set_tracked(inode)      inode_set_flag(inode, TRACKED_BIT)
+#define inode_is_tracked(inode)       inode_check_flag(inode, TRACKED_BIT)
 
 // FUNCTIONS
 
@@ -111,7 +134,7 @@ static inline uint32_t file_mask_to_perms(int mode, unsigned int mask)
   return av;
 }
 
-// Check if inode is in the inode map
+// Check if inode is in the tracking inode map
 static int inode_in_map(struct inode *inode) {
 
   for (uint32_t i = 0; i < INODE_MAX_ENTRY; i++) {
@@ -149,19 +172,68 @@ static int in_tracking_dir(struct dentry *entry) {
   return 0;
 }
 
+static int inode_initialized(struct inode_elem *inode) {
+  // get the lock, check the init flag and then set the flag
+  bpf_spin_lock(&inode->lock);
+  int is_init = inode_is_init(inode);
+  if (!is_init) {
+    inode_set_init(inode);
+  }
+  bpf_spin_unlock(&inode->lock);
+  return is_init;
+}
+
+static int get_inode_tracking(struct inode_elem *inode) {
+  bpf_spin_lock(&inode->lock);
+  int is_tracking = inode_is_tracked(inode);
+  bpf_spin_unlock(&inode->lock);
+  return is_tracking;
+}
+
+static int set_inode_tracking(struct inode_elem *inode) {
+  bpf_spin_lock(&inode->lock);
+  inode_set_tracked(inode);
+  bpf_spin_unlock(&inode->lock);
+  return 0;
+}
+
 SEC("lsm/file_permission")
 int BPF_PROG(file_permission, struct file *file, int mask)
 {
   struct task_struct *current_task;
   uint32_t perms;
+  struct inode_elem *inode;
 
+  // only check files not directories
   if (is_inode_dir(file->f_inode)) {
     return 0;
   }
 
-  if (in_tracking_dir(file->f_path.dentry) == 0) {
+  // check inode cache
+  inode = bpf_inode_storage_get(&inode_storage_map, file->f_inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE); 
+
+  if (inode == NULL) {
+    bpf_printk("something has gone wrong in inode storage");
     return 0;
   }
+
+  // initialize node if not already, if not init then we walk file path to check tracking
+  if (inode_initialized(inode) == 0) {
+    // walk directory and check if its in there
+    // inode not initialized (not cached)
+    if (in_tracking_dir(file->f_path.dentry) == 1) {
+      set_inode_tracking(inode);
+      // bpf_printk("setting tracking bit to 1");
+    }
+  }
+
+  if (get_inode_tracking(inode) == 0) {
+    return 0; // not tracking
+  }
+
+//  if (in_tracking_dir(file->f_path.dentry) == 0) {
+//    return 0;
+//  }
 
   // Debug file name
   // bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
