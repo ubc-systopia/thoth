@@ -49,7 +49,9 @@ track:
 
 user:
 	clang -Wall user.c -o user.o -c
-	clang -o user user.o -lbpf
+	clang -o thothd \
+	user.o \
+	-lbpf
 
 skel:
 	bpftool gen skeleton track.o > track.skel.h
@@ -64,3 +66,23 @@ uncrustify_clean:
 	rm *backup*~
 
 all: track skel user uncrustify uncrustify_clean
+
+install:
+	sudo cp --force ./thothd /usr/bin/thothd
+	sudo cp --force ./thothd.service /etc/systemd/system/thothd.service
+	sudo systemctl enable thothd.service
+
+start:
+	sudo systemctl start thothd.service
+
+stop:
+	sudo systemctl stop thothd.service
+
+status:
+	sudo systemctl status thothd.service
+
+uninstall:
+	sudo systemctl stop thothd.service
+	sudo systemctl disable thothd.service
+	sudo rm -f /usr/bin/thothd
+	sudo rm -f /etc/systemd/system/thothd.service
