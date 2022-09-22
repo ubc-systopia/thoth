@@ -32,9 +32,18 @@
 
 #define MAX_LINE_SIZE 100
 
+static struct track *skel = NULL;
 static int fd;
-
 static int tracking_inode = 6148;
+
+static void sig_handler(int sig) {
+  if (sig == SIGTERM) {
+    printf("quitting\r\n");
+    //syslog(LOG_INFO, "thoth: Received termination signal...");
+    track__destroy(skel);
+    exit(0);
+  }
+}
 
 // Start with adding just one id into the map
 static void add_inode(struct track *skel, uint32_t index, uint64_t value) {
@@ -64,9 +73,11 @@ static int buf_process_entry(void *ctx, void *data, size_t len)
 
 int main(int argc, char *argv[])
 {
-  struct track *skel = NULL;
   struct ring_buffer *ringbuf = NULL;
   int err, map_fd;
+
+  //syslog(LOG_INFO, "thoth: Registering signal handler...");
+  signal(SIGTERM, sig_handler);
 
   if (argc == 2) {
     tracking_inode = (uint32_t)atoi(argv[1]);
