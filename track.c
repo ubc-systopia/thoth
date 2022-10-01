@@ -253,6 +253,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = READ,
     };
+    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_name.name);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
