@@ -101,8 +101,13 @@ void spade_write_node_file(int fd, struct entry_t *entry) {
   strncat(buf, "\"uid\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
   strncat(buf, uid, MAX_BUFFER_LEN);
-  strncat(buf, "\"", MAX_BUFFER_LEN);
+  strncat(buf, "\",", MAX_BUFFER_LEN);
   
+  strncat(buf, "\"name\":", MAX_BUFFER_LEN);
+  strncat(buf, "\"", MAX_BUFFER_LEN);
+  strncat(buf, entry->file_name, MAX_BUFFER_LEN);
+  strncat(buf, "\"", MAX_BUFFER_LEN); 
+
   // end json
   strncat(buf, "}}\n", MAX_BUFFER_LEN);
 
