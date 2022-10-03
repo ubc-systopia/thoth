@@ -25,12 +25,17 @@
 #include <fcntl.h>
 #include <string.h>
 #include <bpf/bpf.h>
+#include <pthread.h>
+#include <netinet/in.h>
 
 #include "spade.c"
 #include "record.h"
 #include "track.skel.h"
 
+#define CLI_PORT 5001
+
 #define MAX_LINE_SIZE 100
+#define MAX_SOCK_BUF 256
 
 static struct track *skel = NULL;
 static int fd;
@@ -67,6 +72,56 @@ static int buf_process_entry(void *ctx, void *data, size_t len)
 {
   struct entry_t *read_entry = (struct entry_t *)data; 
   write_to_file(read_entry);
+  return 0;
+}
+
+static int cli_process_buf(char *buffer) {
+  return 0;
+}
+
+void* cli_server(void* data) {
+  int sockfd; 
+  socklen_t client_len;
+  struct sockaddr_in server_addr, client_addr;
+
+  char buffer[MAX_SOCK_BUF];
+
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    perror("Error opening socket for cli");
+    exit(-1);
+  }
+
+  bzero((char *) &server_addr, sizeof(server_addr));
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(CLI_PORT);
+
+  if (bind(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+    perror("Error binding socket for cli");
+  }
+
+  listen(sockfd, 5);
+  client_len = sizeof(client_addr);
+  int newsockfd;
+
+  while (1) {
+    newsockfd = accept(sockfd, (struct sockaddr *) &client_addr, &client_len);
+
+    if (newsockfd < 0) {
+      perror("error on socket accept");
+    }
+
+    bzero(buffer, MAX_SOCK_BUF);
+    int n = read(newsockfd, buffer, MAX_SOCK_BUF);
+    if (n < 0) {
+      perror("error reading from socket");
+    }
+    printf("%s\r\n", buffer);
+    cli_process_buf((char *)&buffer);
+
+    close(newsockfd);
+  }
 
   return 0;
 }
@@ -75,6 +130,7 @@ int main(int argc, char *argv[])
 {
   struct ring_buffer *ringbuf = NULL;
   int err, map_fd;
+  pthread_t cli_thread_id;
 
   //syslog(LOG_INFO, "thoth: Registering signal handler...");
   signal(SIGTERM, sig_handler);
@@ -82,6 +138,12 @@ int main(int argc, char *argv[])
   if (argc == 2) {
     tracking_inode = (uint32_t)atoi(argv[1]);
   } 
+
+  //syslog(LOG_INFO, "thoth: Starting CLI server...");
+  int rc = pthread_create(&cli_thread_id, NULL, cli_server, NULL);
+  if (rc != 0) {
+    // log error starting thread
+  }
 
   printf("starting...\r\n");
 
