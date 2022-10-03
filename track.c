@@ -253,7 +253,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = READ,
     };
-    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_name.name);
+    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -267,6 +267,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = WRITE,
     };
+    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -280,6 +281,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = EXEC,
     };
+    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -319,12 +321,13 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
     .pid = current_task->pid,
     .utime = current_task->utime,
     .gtime = current_task->gtime,
-    .inode_inum = bprm->executable->f_inode->i_ino,
-    .inode_uid = bprm->executable->f_inode->i_uid.val,
-    .inode_guid = bprm->executable->f_inode->i_gid.val,
+    .inode_inum = bprm->file->f_inode->i_ino,
+    .inode_uid = bprm->file->f_inode->i_uid.val,
+    .inode_guid = bprm->file->f_inode->i_gid.val,
     .op = EXEC,
   };
 
+  bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
   bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 
   return 0;
