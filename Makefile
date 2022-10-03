@@ -53,6 +53,12 @@ user:
 	user.o \
 	-lbpf
 
+cli:
+	clang -Wall thoth.c -o thoth.o -c
+	clang -o thoth \
+	thoth.c \
+	-lpthread
+
 skel:
 	bpftool gen skeleton track.o > track.skel.h
 
