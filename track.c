@@ -289,7 +289,32 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 SEC("lsm/bprm_creds_for_exec")
 int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm) 
 {
+  struct inode_elem *inode;
   struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
+  
+  // check inode cache
+  inode = bpf_inode_storage_get(&inode_storage_map, current_task->fs->pwd.dentry->d_inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE); 
+
+  if (inode == NULL) {
+    bpf_printk("something has gone wrong in inode storage");
+    return 0;
+  }
+
+  // initialize node if not already, if not init then we walk file path to check tracking
+  if (inode_initialized(inode) == 0) {
+    // walk directory and check if its in there
+    // inode not initialized (not cached)
+    if (in_tracking_dir(current_task->fs->pwd.dentry) == 1) {
+      set_inode_tracking(inode);
+      // bpf_printk("setting tracking bit to 1");
+    }
+  }
+
+  if (get_inode_tracking(inode) == 0) {
+    return 0; // not tracking
+  }
+
+  //bpf_printk("current pwd task dentry name: %s", current_task->fs->pwd.dentry->d_name.name);
   struct entry_t new_entry = {
     .pid = current_task->pid,
     .utime = current_task->utime,
