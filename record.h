@@ -1,4 +1,4 @@
-#/*
+/*
  *
  * Author: Nichole Boufford <ncbouf@cs.ubc.ca>
  *
