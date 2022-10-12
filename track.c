@@ -197,6 +197,32 @@ static int set_inode_tracking(struct inode_elem *inode) {
   return 0;
 }
 
+#define MAX_PATH_DEPTH 10
+#define MAX_NAME_LEN 16
+
+int get_path_name(struct entry_t *entry, struct dentry* dentry) {
+  struct dentry *d = dentry;
+  int path_len = 0;
+  //char buffer[MAX_PATH_DEPTH*MAX_NAME_LEN];
+
+  for (int i = 0; i < MAX_PATH_DEPTH; i++) {
+    //char d_name[MAX_NAME_LEN];
+    if (d == d->d_parent)
+      break;
+    if (d == NULL)
+      break;
+    if (path_len < 0)
+      break;
+    //path_len = bpf_probe_read_kernel_str(buffer+path_len, MAX_NAME_LEN-1, d->d_iname);
+    d = d->d_parent;
+  }
+
+  // bpf_printk("buffer: %s", buffer);
+  bpf_probe_read_kernel_str(entry->file_name, FILE_PATH_MAX, dentry->d_iname);
+  return 0;
+}
+
+
 SEC("lsm/file_permission")
 int BPF_PROG(file_permission, struct file *file, int mask)
 {
@@ -301,7 +327,7 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
     bpf_printk("something has gone wrong in inode storage");
     return 0;
   }
-
+  
   // initialize node if not already, if not init then we walk file path to check tracking
   if (inode_initialized(inode) == 0) {
     // walk directory and check if its in there
@@ -316,7 +342,6 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
     return 0; // not tracking
   }
 
-  //bpf_printk("current pwd task dentry name: %s", current_task->fs->pwd.dentry->d_name.name);
   struct entry_t new_entry = {
     .pid = current_task->pid,
     .utime = current_task->utime,
@@ -326,8 +351,8 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
     .inode_guid = bprm->file->f_inode->i_gid.val,
     .op = EXEC,
   };
-
-  bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
+  get_path_name(&new_entry, bprm->file->f_path.dentry);
+  //bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
   bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 
   return 0;
