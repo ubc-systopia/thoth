@@ -27,15 +27,14 @@
 #include <bpf/bpf.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <syslog.h>
 
-#include "spade.c"
+#include "common.h"
 #include "record.h"
+#include "spade.c"
 #include "track.skel.h"
 
-#define CLI_PORT 5001
-
 #define MAX_LINE_SIZE 100
-#define MAX_SOCK_BUF 256
 
 static struct track *skel = NULL;
 static int fd;
@@ -43,8 +42,7 @@ static int tracking_inode = 6148;
 
 static void sig_handler(int sig) {
   if (sig == SIGTERM) {
-    printf("quitting\r\n");
-    //syslog(LOG_INFO, "thoth: Received termination signal...");
+    syslog(LOG_INFO, "thoth: Received termination signal...");
     track__destroy(skel);
     exit(0);
   }
@@ -84,7 +82,7 @@ void* cli_server(void* data) {
   socklen_t client_len;
   struct sockaddr_in server_addr, client_addr;
 
-  char buffer[MAX_SOCK_BUF];
+  char buffer[SOCK_BUF_MAX];
 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
@@ -112,8 +110,8 @@ void* cli_server(void* data) {
       perror("error on socket accept");
     }
 
-    bzero(buffer, MAX_SOCK_BUF);
-    int n = read(newsockfd, buffer, MAX_SOCK_BUF);
+    bzero(buffer, SOCK_BUF_MAX);
+    int n = read(newsockfd, buffer, SOCK_BUF_MAX);
     if (n < 0) {
       perror("error reading from socket");
     }
@@ -132,17 +130,17 @@ int main(int argc, char *argv[])
   int err, map_fd;
   pthread_t cli_thread_id;
 
-  //syslog(LOG_INFO, "thoth: Registering signal handler...");
+  syslog(LOG_INFO, "thothd: Registering signal handler...");
   signal(SIGTERM, sig_handler);
 
   if (argc == 2) {
     tracking_inode = (uint32_t)atoi(argv[1]);
   } 
 
-  //syslog(LOG_INFO, "thoth: Starting CLI server...");
+  syslog(LOG_INFO, "thothd: Starting CLI server...");
   int rc = pthread_create(&cli_thread_id, NULL, cli_server, NULL);
   if (rc != 0) {
-    // log error starting thread
+    syslog(LOG_ERR, "thothd: error starting cli thread");
   }
 
   printf("starting...\r\n");
