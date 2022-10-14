@@ -98,7 +98,6 @@ int buf_process_entry(void *ctx, void *data, size_t len)
   struct entry_t *read_entry = (struct entry_t *)data; 
   char path_buffer[TOTAL_PATH_MAX];
   process_file_path(read_entry, (char *)&path_buffer);
-  printf("buffer: %s\r\n", path_buffer);
   write_to_file(read_entry, (char *)&path_buffer);
   return 0;
 }
