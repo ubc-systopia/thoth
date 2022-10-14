@@ -57,23 +57,54 @@ static void add_inode(struct track *skel, uint32_t index, uint64_t value) {
   bpf_map_update_elem(map_fd, &index, &id, BPF_ANY);
 }
 
-static void write_to_file(struct entry_t *entry) 
+void write_to_file(struct entry_t *entry, char* buffer) 
 {
   // should lock here
-  spade_write_node_file(fd, entry);
+  spade_write_node_file(fd, entry, buffer);
   spade_write_node_proc(fd, entry);
   spade_write_edge(fd, entry);
   // should unlock here
 }
 
-static int buf_process_entry(void *ctx, void *data, size_t len)
+// this is a temporary fix for resolving the file path
+void process_file_path(struct entry_t *entry, char* buffer) {
+  int path_len = 0;
+  
+  // sanity check
+  if (entry->file_path_depth <= 0 || entry->file_path_depth > PATH_DEPTH_MAX) 
+    return; 
+  
+  for (int i = entry->file_path_depth - 1; i >= 0; i--) {
+    int len = 0;
+    if (i == entry->file_path_depth - 1) { 
+      len = sprintf(buffer, "/");
+      if (len > 0)
+        path_len += len;
+    }
+    if (i == 0) {
+      len = sprintf(buffer+path_len, "%s", entry->file_path[i]);
+    } else {  
+      len = sprintf(buffer+path_len, "%s/", entry->file_path[i]);
+    }
+
+    if (len > 0)
+      path_len += len;
+  }
+}
+
+
+int buf_process_entry(void *ctx, void *data, size_t len)
 {
   struct entry_t *read_entry = (struct entry_t *)data; 
-  write_to_file(read_entry);
+  char path_buffer[TOTAL_PATH_MAX];
+  process_file_path(read_entry, (char *)&path_buffer);
+  printf("buffer: %s\r\n", path_buffer);
+  write_to_file(read_entry, (char *)&path_buffer);
   return 0;
 }
 
 static int cli_process_buf(char *buffer) {
+  printf("processing buffer: %s", buffer);
   return 0;
 }
 

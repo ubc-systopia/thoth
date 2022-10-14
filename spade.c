@@ -24,7 +24,7 @@
 
 #include "record.h"
 
-#define MAX_BUFFER_LEN 100 
+#define MAX_BUFFER_LEN 1024 
 
 int edge_id = 0;
 
@@ -69,7 +69,7 @@ void spade_write_node_proc(int fd, struct entry_t *entry) {
   write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
-void spade_write_node_file(int fd, struct entry_t *entry) {
+void spade_write_node_file(int fd, struct entry_t *entry, char* buffer) {
   char buf[MAX_BUFFER_LEN];
   buf[0] = '\0';
   
@@ -103,9 +103,9 @@ void spade_write_node_file(int fd, struct entry_t *entry) {
   strncat(buf, uid, MAX_BUFFER_LEN);
   strncat(buf, "\",", MAX_BUFFER_LEN);
   
-  strncat(buf, "\"name\":", MAX_BUFFER_LEN);
+  strncat(buf, "\"path\":", MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, entry->file_name, MAX_BUFFER_LEN);
+  strncat(buf, buffer, MAX_BUFFER_LEN);
   strncat(buf, "\"", MAX_BUFFER_LEN); 
 
   // end json

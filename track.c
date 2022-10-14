@@ -30,7 +30,6 @@
 #include <bpf/bpf_tracing.h>
 
 #define INODE_MAX_ENTRY 256
-#define MAX_DIR_PATH 10
 
 char _license[] SEC("license") = "GPL";
 
@@ -100,6 +99,7 @@ struct {
 #define inode_set_tracked(inode)      inode_set_flag(inode, TRACKED_BIT)
 #define inode_is_tracked(inode)       inode_check_flag(inode, TRACKED_BIT)
 
+
 // FUNCTIONS
 
 // from profbpf project
@@ -159,7 +159,7 @@ static int inode_in_map(struct inode *inode) {
 static int in_tracking_dir(struct dentry *entry) {
   struct dentry *d = entry;
   int path_len = 0;
-  while (path_len < MAX_DIR_PATH && d != NULL) {
+  while (path_len < PATH_DEPTH_MAX && d != NULL) {
     if (inode_in_map(d->d_inode) == 1) {
        return 1;
     }
@@ -197,31 +197,25 @@ static int set_inode_tracking(struct inode_elem *inode) {
   return 0;
 }
 
-#define MAX_PATH_DEPTH 10
 #define MAX_NAME_LEN 16
 
-int get_path_name(struct entry_t *entry, struct dentry* dentry) {
+int read_path_name(struct entry_t *entry, struct dentry* dentry) {
   struct dentry *d = dentry;
-  int path_len = 0;
-  //char buffer[MAX_PATH_DEPTH*MAX_NAME_LEN];
+  
+  for (int i = 0; i < PATH_DEPTH_MAX; i++) {
+    if (d == d->d_parent || d == NULL) {
+      break;
+    }
 
-  for (int i = 0; i < MAX_PATH_DEPTH; i++) {
-    //char d_name[MAX_NAME_LEN];
-    if (d == d->d_parent)
-      break;
-    if (d == NULL)
-      break;
-    if (path_len < 0)
-      break;
-    //path_len = bpf_probe_read_kernel_str(buffer+path_len, MAX_NAME_LEN-1, d->d_iname);
+    int len = bpf_probe_read_kernel_str(&entry->file_path[i], MAX_NAME_LEN, d->d_iname);
+    bpf_printk("read %u bytes", len); 
+    bpf_printk("%s", entry->file_path[i]);
+    entry->file_path_depth++;
     d = d->d_parent;
   }
-
-  // bpf_printk("buffer: %s", buffer);
-  bpf_probe_read_kernel_str(entry->file_name, FILE_PATH_MAX, dentry->d_iname);
+    
   return 0;
 }
-
 
 SEC("lsm/file_permission")
 int BPF_PROG(file_permission, struct file *file, int mask)
@@ -257,14 +251,6 @@ int BPF_PROG(file_permission, struct file *file, int mask)
     return 0; // not tracking
   }
 
-//  if (in_tracking_dir(file->f_path.dentry) == 0) {
-//    return 0;
-//  }
-
-  // Debug file name
-  // bpf_printk("file name: %s", file->f_path.dentry->d_name.name);
-  // bpf_printk("file parent: %s", file->f_path.dentry->d_parent->d_name.name);
-
   current_task = (struct task_struct *)bpf_get_current_task_btf();
 
   perms = file_mask_to_perms((file->f_inode)->i_mode, mask);
@@ -279,7 +265,8 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = READ,
     };
-    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
+    read_path_name(&new_entry, file->f_path.dentry);
+    //bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -293,7 +280,8 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = WRITE,
     };
-    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
+    read_path_name(&new_entry, file->f_path.dentry);
+    //bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -307,7 +295,8 @@ int BPF_PROG(file_permission, struct file *file, int mask)
       .inode_guid = file->f_inode->i_gid.val,
       .op = EXEC,
     };
-    bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, file->f_path.dentry->d_iname);
+    read_path_name(&new_entry, file->f_path.dentry);
+    //bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
     bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
   }
 
@@ -351,7 +340,7 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
     .inode_guid = bprm->file->f_inode->i_gid.val,
     .op = EXEC,
   };
-  get_path_name(&new_entry, bprm->file->f_path.dentry);
+  read_path_name(&new_entry, bprm->file->f_path.dentry);
   //bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
   bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 

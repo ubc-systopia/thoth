@@ -21,7 +21,9 @@
 #ifndef __RECORD_H
 #define __RECORD_H
 
-#define FILE_PATH_MAX 256
+#define PATH_DEPTH_MAX 5
+#define PATH_NAME_MAX 32
+#define TOTAL_PATH_MAX PATH_DEPTH_MAX*PATH_NAME_MAX
 
 enum operation {
   READ = 1,
@@ -36,7 +38,9 @@ struct entry_t {
   unsigned int inode_inum;
   int inode_uid;
   int inode_guid;
-  char file_name[FILE_PATH_MAX];
+  int file_path_depth;
+  char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
+  char file_name[TOTAL_PATH_MAX];
   enum operation op;
 };
 
