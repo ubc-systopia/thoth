@@ -40,7 +40,6 @@ struct entry_t {
   int inode_guid;
   int file_path_depth;
   char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
-  char file_name[TOTAL_PATH_MAX];
   enum operation op;
 };
 
