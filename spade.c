@@ -141,19 +141,39 @@ void spade_write_edge(int fd, struct entry_t *entry) {
 
   // type
   strncat(buf, "\"type\":", MAX_BUFFER_LEN);
-  strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
+  if (entry->op == READ) {
+    strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
+  } else if (entry->op == WRITE) {
+    strncat(buf, "\"WasGeneratedBy\",", MAX_BUFFER_LEN);
+  } else if (entry->op == EXEC) {
+    strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
+  }
 
-  // to
-  strncat(buf, "\"to\":", MAX_BUFFER_LEN);
-  strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, inode, MAX_BUFFER_LEN);
-  strncat(buf, "\",", MAX_BUFFER_LEN);
+  if (entry->op == READ || entry->op == EXEC) {
+    // to
+    strncat(buf, "\"to\":", MAX_BUFFER_LEN);
+    strncat(buf, "\"", MAX_BUFFER_LEN);
+    strncat(buf, inode, MAX_BUFFER_LEN);
+    strncat(buf, "\",", MAX_BUFFER_LEN);
  
-  // from
-  strncat(buf, "\"from\":", MAX_BUFFER_LEN);
-  strncat(buf, "\"", MAX_BUFFER_LEN);
-  strncat(buf, pid, MAX_BUFFER_LEN);
-  strncat(buf, "\",", MAX_BUFFER_LEN);
+    // from
+    strncat(buf, "\"from\":", MAX_BUFFER_LEN);
+    strncat(buf, "\"", MAX_BUFFER_LEN);
+    strncat(buf, pid, MAX_BUFFER_LEN);
+    strncat(buf, "\",", MAX_BUFFER_LEN);
+  } else if (entry->op == WRITE) {
+     // to
+    strncat(buf, "\"to\":", MAX_BUFFER_LEN);
+    strncat(buf, "\"", MAX_BUFFER_LEN);
+    strncat(buf, pid, MAX_BUFFER_LEN);
+    strncat(buf, "\",", MAX_BUFFER_LEN);
+ 
+    // from
+    strncat(buf, "\"from\":", MAX_BUFFER_LEN);
+    strncat(buf, "\"", MAX_BUFFER_LEN);
+    strncat(buf, inode, MAX_BUFFER_LEN);
+    strncat(buf, "\",", MAX_BUFFER_LEN);
+  }
   
   // annotations
   strncat(buf, "\"annotations\":{", MAX_BUFFER_LEN);  
