@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <netinet/in.h>
 #include <syslog.h>
+#include <dirent.h>
 
 #include "common.h"
 #include "record.h"
@@ -38,7 +39,7 @@
 
 static struct track *skel = NULL;
 static int fd;
-static int tracking_inode = 6148;
+static int inode_track_index = 0;
 
 static void sig_handler(int sig) {
   if (sig == SIGTERM) {
@@ -49,12 +50,23 @@ static void sig_handler(int sig) {
 }
 
 // Start with adding just one id into the map
-static void add_inode(struct track *skel, uint32_t index, uint64_t value) {
+int add_inode(struct track *skel, uint32_t index, uint64_t value) {
   int map_fd;
   uint64_t id;
+  if (inode_track_index > INODE_MAX_ENTRY) {
+    printf("max tracking directories reached, failed to add directory\r\n");
+    return -1;
+  }
   map_fd = bpf_object__find_map_fd_by_name(skel->obj, "inode_map");
   id = value;
-  bpf_map_update_elem(map_fd, &index, &id, BPF_ANY);
+  bpf_map_update_elem(map_fd, &inode_track_index, &id, BPF_ANY);
+  inode_track_index++;
+  return 0;
+}
+
+// TODO
+int remove_inode(struct track *skel, uint32_t index, uint64_t value) {
+  return 0;
 }
 
 void write_to_file(struct entry_t *entry, char* buffer) 
@@ -92,7 +104,6 @@ void process_file_path(struct entry_t *entry, char* buffer) {
   }
 }
 
-
 int buf_process_entry(void *ctx, void *data, size_t len)
 {
   struct entry_t *read_entry = (struct entry_t *)data; 
@@ -102,8 +113,42 @@ int buf_process_entry(void *ctx, void *data, size_t len)
   return 0;
 }
 
-static int cli_process_buf(char *buffer) {
-  printf("processing buffer: %s", buffer);
+static int cli_process_msg(struct op_msg *msg, struct err_msg *err) {
+  DIR* dir;
+
+  if (msg->op == ADD_DIR) {
+    dir = opendir(msg->arg[0]);
+    if (dir == NULL) {
+      err->err = ERR_OK;
+      snprintf(err->msg, MSG_LEN, "error! cannot find directory: %s", msg->arg[0]);
+      return 0;
+    }
+
+    struct dirent *dir_entry = readdir(dir);
+    if (dir_entry == NULL) {
+      err->err = ERR_OK;
+      snprintf(err->msg, MSG_LEN, "error adding directory to tracked directories");
+    }
+    // TODO: get response from add
+    add_inode(skel, 0, dir_entry->d_ino);
+  }
+
+  if (msg->op == RM_DIR) {
+    dir = opendir(msg->arg[0]);
+    if (dir == NULL) {
+      err->err = ERR_OK;
+      snprintf(err->msg, MSG_LEN, "error! cannot find directory: %s", msg->arg[0]);
+      return 0;
+    }
+
+    struct dirent *dir_entry = readdir(dir);
+    if (dir_entry == NULL) {
+      err->err = ERR_OK;
+      snprintf(err->msg, MSG_LEN, "error adding directory to tracked directories");
+    }
+    // TODO: get response from remove
+    remove_inode(skel, 0, dir_entry->d_ino);
+  }
   return 0;
 }
 
@@ -111,8 +156,6 @@ void* cli_server(void* data) {
   int sockfd; 
   socklen_t client_len;
   struct sockaddr_in server_addr, client_addr;
-
-  char buffer[SOCK_BUF_MAX];
 
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
@@ -127,6 +170,8 @@ void* cli_server(void* data) {
 
   if (bind(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
     perror("Error binding socket for cli");
+    close(sockfd);
+    exit(-1);
   }
 
   listen(sockfd, 5);
@@ -140,17 +185,29 @@ void* cli_server(void* data) {
       perror("error on socket accept");
     }
 
-    bzero(buffer, SOCK_BUF_MAX);
-    int n = read(newsockfd, buffer, SOCK_BUF_MAX);
-    if (n < 0) {
+    struct op_msg r_msg;
+ 
+    int n = read(newsockfd, &r_msg, sizeof(r_msg));
+    if (n < 0) 
       perror("error reading from socket");
-    }
-    printf("%s\r\n", buffer);
-    cli_process_buf((char *)&buffer);
+    
+    printf("%s\r\n", r_msg.arg[0]);
+ 
+    // TODO: remove and replace with real error msg   
+    struct err_msg e_msg = {
+      .err = ERR_OK,
+      .msg = "Sucess!"
+    };
+
+    cli_process_msg(&r_msg, &e_msg);
+    
+    n = write(newsockfd, &e_msg, sizeof(e_msg));
+ 
+    if (n < 0)
+      perror("error writing to socket");
 
     close(newsockfd);
   }
-
   return 0;
 }
 
@@ -162,10 +219,6 @@ int main(int argc, char *argv[])
 
   syslog(LOG_INFO, "thothd: Registering signal handler...");
   signal(SIGTERM, sig_handler);
-
-  if (argc == 2) {
-    tracking_inode = (uint32_t)atoi(argv[1]);
-  } 
 
   syslog(LOG_INFO, "thothd: Starting CLI server...");
   int rc = pthread_create(&cli_thread_id, NULL, cli_server, NULL);
@@ -181,9 +234,6 @@ int main(int argc, char *argv[])
     goto close_prog;
   }
   
-  // add test inode number
-  add_inode(skel, 0, (uint64_t)tracking_inode);
-
   err = track__attach(skel);
   if (err != 0) {
     printf("Error attaching skeleton\r\n");
