@@ -13,6 +13,7 @@
 
 #include "vmlinux.h"
 #include "record.h"
+#include "common.h"
 
 #define __kernel_size_t
 #define __kernel_fsid_t
