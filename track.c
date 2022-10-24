@@ -29,8 +29,6 @@
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 
-#define INODE_MAX_ENTRY 256
-
 char _license[] SEC("license") = "GPL";
 
 struct inode_elem {
