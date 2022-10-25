@@ -29,6 +29,7 @@
 #include <netinet/in.h>
 #include <syslog.h>
 #include <dirent.h>
+#include <time.h>
 
 #include "common.h"
 #include "record.h"
@@ -40,6 +41,17 @@
 static struct track *skel = NULL;
 static int fd;
 static int inode_track_index = 0;
+
+static void init_log() {
+  char filename[40];
+  struct tm *time_str;
+
+  time_t current_time = time(NULL);
+  time_str = localtime(&current_time);
+  strftime(filename, sizeof(filename), "/tmp/prov_%Y-%m-%d_%H:%M:%S.json", time_str);
+
+  fd = open(filename, O_RDWR | O_CREAT);
+}
 
 static void sig_handler(int sig) {
   if (sig == SIGTERM) {
@@ -239,9 +251,10 @@ int main(int argc, char *argv[])
     syslog(LOG_ERR, "Error attaching skeleton\r\n");
   }
 
-  fd = open("/tmp/track.json", O_RDWR);
+  init_log();
+
   if (fd < 0) {
-    syslog(LOG_ERR, "error opening file\r\n");
+    syslog(LOG_ERR, "error creating log file\r\n");
   }
   
   // Locate ring buffer
