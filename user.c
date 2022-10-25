@@ -230,24 +230,24 @@ int main(int argc, char *argv[])
 
   skel = track__open_and_load();
   if (!skel) {
-    printf("Failed to load bpf skeleton");
+    syslog(LOG_ERR, "Failed to load bpf skeleton");
     goto close_prog;
   }
   
   err = track__attach(skel);
   if (err != 0) {
-    printf("Error attaching skeleton\r\n");
+    syslog(LOG_ERR, "Error attaching skeleton\r\n");
   }
 
   fd = open("/tmp/track.json", O_RDWR);
   if (fd < 0) {
-    printf("error opening file\r\n");
+    syslog(LOG_ERR, "error opening file\r\n");
   }
   
   // Locate ring buffer
   map_fd = bpf_object__find_map_fd_by_name(skel->obj, "ringbuf");
   if (map_fd < 0) {
-    printf("Failed to find ring buffer map object");
+    syslog(LOG_ERR, "Failed to find ring buffer map object");
     goto close_prog;
   }
  
