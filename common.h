@@ -33,22 +33,22 @@
 #define INODE_MAX_ENTRY 256
 
 enum cli_op {
-  ADD_DIR = 0,
-  RM_DIR = 1,
+	ADD_DIR = 0,
+	RM_DIR  = 1,
 };
 
 enum cli_err {
-  ERR_OK = 0,
+	ERR_OK = 0,
 };
 
 struct op_msg {
-  enum cli_op op;
-  char arg[NUM_ARGS][ARG_LEN];
+	enum cli_op op;
+	char arg[NUM_ARGS][ARG_LEN];
 };
 
 struct err_msg {
-  enum cli_err err;
-  char msg[MSG_LEN];
+	enum cli_err err;
+	char msg[MSG_LEN];
 };
 
 

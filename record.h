@@ -23,24 +23,26 @@
 
 #define PATH_DEPTH_MAX 5
 #define PATH_NAME_MAX 32
-#define TOTAL_PATH_MAX PATH_DEPTH_MAX*PATH_NAME_MAX
+#define TOTAL_PATH_MAX PATH_DEPTH_MAX *PATH_NAME_MAX
 
 enum operation {
-  READ = 1,
-  WRITE = 2,
-  EXEC = 3,
+	READ    = 1,
+	WRITE   = 2,
+	EXEC    = 3,
 };
 
 struct entry_t {
-  int pid;
-  int utime;
-  int gtime;
-  unsigned int inode_inum;
-  int inode_uid;
-  int inode_guid;
-  int file_path_depth;
-  char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
-  enum operation op;
+	int pid;
+	int utime;
+	int gtime;
+	unsigned int inode_inum;
+	int inode_uid;
+	int inode_guid;
+	int proc_uid;
+	int proc_guid;
+	int file_path_depth;
+	char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
+	enum operation op;
 };
 
 #endif
