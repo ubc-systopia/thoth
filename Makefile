@@ -73,7 +73,7 @@ uncrustify:
 uncrustify_clean:
 	rm *backup*~
 
-all: track skel user uncrustify uncrustify_clean
+all: track skel user cli uncrustify uncrustify_clean
 
 install:
 	sudo cp --force ./thothd /usr/bin/thothd
@@ -94,3 +94,13 @@ uninstall:
 	sudo systemctl disable thothd.service
 	sudo rm -f /usr/bin/thothd
 	sudo rm -f /etc/systemd/system/thothd.service
+
+rpm: all
+	mkdir -p ~/rpmbuild/{RPMS,SRMS,BUILD,SOURCES,SPECS,tmp}
+	rpmbuild -bb thoth.spec
+	mkdir -p output
+	cp ~/rpmbuild/RPMS/x86_64/* ./output
+
+deb:
+	sudo alien output/thoth-$(version)-1.x86_64.rpm
+	cp *.deb .output
