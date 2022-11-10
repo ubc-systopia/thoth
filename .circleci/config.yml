@@ -22,8 +22,6 @@ jobs:
       - run: 'make btf_circle'
       - run: 'make all'
       - run: 'make rpm'
-      - run: 'cd /root/rpmbuild/RPMS/x86_64/ && ls'
-      - run: 'cp /root/rpmbuild/RPMS/x86_64/* ./output'
       - run: 'make deb'
 
 # Invoke jobs via workflows
