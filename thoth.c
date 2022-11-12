@@ -41,7 +41,6 @@ int write_to_server(struct op_msg msg)
 	char hostname[HOSTNAME_MAX];
 
 	gethostname(hostname, HOSTNAME_MAX);
-
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		perror("Error opening socket");
@@ -51,6 +50,11 @@ int write_to_server(struct op_msg msg)
 	bzero((char *) &server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	struct hostent *hptr = gethostbyname(hostname);
+
+	if (hptr == NULL) {
+		perror("hostname error");
+		return -1;
+	}
 
 	bcopy((char *)hptr->h_addr, (char *)&server_addr.sin_addr.s_addr, hptr->h_length);
 	server_addr.sin_port = htons(CLI_PORT);

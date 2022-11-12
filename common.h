@@ -24,7 +24,7 @@
 #define SOCK_BUF_MAX 256
 #define CLI_PORT 5001
 
-#define HOSTNAME_MAX 10
+#define HOSTNAME_MAX 64
 
 #define NUM_ARGS 5
 #define ARG_LEN 50
