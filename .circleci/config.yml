@@ -22,6 +22,10 @@ jobs:
       - run: 'make all'
       - run: 'make rpm'
       - run: 'make deb'
+      - persist_to_workspace:
+          root: .
+          paths:
+            - output
   publish:
     executor: cloudsmith/default
     working_directory: ~/build
