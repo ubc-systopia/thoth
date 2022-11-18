@@ -54,7 +54,7 @@ jobs:
 workflows:
   build-test-workflow:
     jobs:
-      - build-test
+      - build-test:
           filters:
             tags:
               only: /.*/
