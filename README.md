@@ -16,3 +16,7 @@ To build project:
 To run the provenance collection:
 
 `sudo ./user`
+
+## Installation from packages
+
+TODO
