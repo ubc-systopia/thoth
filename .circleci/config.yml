@@ -1,6 +1,7 @@
 # Use the latest 2.1 version of CircleCI pipeline process engine.
 # See: https://circleci.com/docs/2.0/configuration-reference
-version: 2.1
+version: 2.1orbs:
+  cloudsmith: cloudsmith/cloudsmith@1.0.1
 
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
@@ -23,6 +24,31 @@ jobs:
       - run: 'make all'
       - run: 'make rpm'
       - run: 'make deb'
+      - persist_to_workspace:
+          paths:
+            - ouput
+  publish:
+    executor: cloudsmith/default
+    working_directory: ~/build
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/build
+      - cloudsmith/ensure-api-key
+      - cloudsmith/install-cli
+      - run: 'cd ./output && ls'
+      - cloudsmith/publish:
+          allow-republish: true
+          cloudsmith-repository: camflow/camflow
+          package-path: output/thoth*.x86_64.rpm
+          package-format: rpm
+          package-distribution: fedora/36
+      - cloudsmith/publish:
+          allow-republish: true
+          cloudsmith-repository: camflow/camflow
+          package-path: output/thoth*.amd64.deb
+          package-format: rpm
+          package-distribution: ubuntu/22.04
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -30,6 +56,14 @@ workflows:
   build-test-workflow:
     jobs:
       - build-test
+      - publish:
+          requires:
+            -build-test
+          filters:
+            tags:
+              ignore: /test/
+            branches:
+              ignore: /.*/
   nightly:
     triggers:
       - schedule:
