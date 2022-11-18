@@ -58,7 +58,7 @@ workflows:
       - build-test
       - publish:
           requires:
-            -build-test
+            - build-test
           filters:
             tags:
               ignore: /test/
