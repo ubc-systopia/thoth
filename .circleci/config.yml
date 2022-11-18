@@ -44,7 +44,6 @@ workflows:
   build-test-workflow:
     jobs:
       - build-test
-      - publish
   nightly:
     triggers:
       - schedule:
