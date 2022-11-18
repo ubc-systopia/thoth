@@ -104,4 +104,4 @@ rpm: all
 
 deb:
 	sudo alien output/thoth-$(version)-1.x86_64.rpm
-	cp *.deb .output
+	cp *.deb ./output
