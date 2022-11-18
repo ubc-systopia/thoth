@@ -44,9 +44,7 @@ workflows:
   build-test-workflow:
     jobs:
       - build-test
-      - publish:
-          requires:
-            - build-test
+      - publish
   nightly:
     triggers:
       - schedule:
