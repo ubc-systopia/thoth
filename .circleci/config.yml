@@ -51,6 +51,14 @@ workflows:
   build-test-workflow:
     jobs:
       - build-test
+      - publish:
+          requires:
+            - build-test
+          filters:
+            tags:
+              ignore: /test/
+            branches:
+              ignore: /.*/
   nightly:
     triggers:
       - schedule:
