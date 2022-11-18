@@ -46,7 +46,7 @@ jobs:
       - cloudsmith/publish:
           allow-republish: true
           cloudsmith-repository: camflow/camflow
-          package-path: output/thoth*.amd64.deb
+          package-path: output/thoth*amd64.deb
           package-format: deb
           package-distribution: ubuntu/jammy
 
