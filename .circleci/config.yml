@@ -55,6 +55,9 @@ workflows:
   build-test-workflow:
     jobs:
       - build-test
+          filters:
+            tags:
+              only: /.*/
       - publish:
           requires:
             - build-test
