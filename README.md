@@ -19,4 +19,10 @@ To run the provenance collection:
 
 ## Installation from packages
 
-TODO
+
+### Fedora
+
+```
+curl -1sLf 'https://dl.cloudsmith.io/public/camflow/camflow/cfg/setup/bash.rpm.sh' | sudo -E bash
+sudo dnf -y install thoth
+```
