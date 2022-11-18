@@ -36,19 +36,6 @@ jobs:
           at: ~/build
       - cloudsmith/ensure-api-key
       - cloudsmith/install-cli
-      - run: 'cd ./output && ls'
-      - cloudsmith/publish:
-          allow-republish: true
-          cloudsmith-repository: camflow/camflow
-          package-path: output/thoth*.x86_64.rpm
-          package-format: rpm
-          package-distribution: fedora/36
-      - cloudsmith/publish:
-          allow-republish: true
-          cloudsmith-repository: camflow/camflow
-          package-path: output/thoth*.amd64.deb
-          package-format: rpm
-          package-distribution: ubuntu/22.04
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
