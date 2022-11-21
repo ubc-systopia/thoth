@@ -52,7 +52,7 @@ user:
 	clang -Wall user.c -o user.o -c
 	clang -o thothd \
 	user.o \
-	-lbpf -lpthread
+	-l:libbpf.so.0 -lpthread
 
 cli:
 	clang -Wall thoth.c -o thoth.o -c
