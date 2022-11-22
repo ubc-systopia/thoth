@@ -17,6 +17,7 @@ jobs:
       - run: 'apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
       - run: 'apt-get install -y bison flex binutils-dev gcc libinih-dev'
       - run: 'apt-get install -y uncrustify alien'
+      - run: 'apt-get install -y libbpf0'
       - run: 'make circle_build_kernel'
       - run: 'make btf_circle'
       - run: 'make all'
