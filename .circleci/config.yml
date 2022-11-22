@@ -24,7 +24,7 @@ jobs:
       - run: 'apt-get install -y gcc-multilib'
       - run: 'apt-get install -y linux-tools-common'
       - run: 'apt-get install -y libssl-dev'
-      - run: 'apt-get install -y libcap libcap-dev'
+      - run: 'apt-get install -y libcap-dev'
       - run: 'apt-get install -y dwarves'
       - run: 'make circle_build_kernel'
       - run: 'make btf_circle'
