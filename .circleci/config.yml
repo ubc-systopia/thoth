@@ -26,7 +26,7 @@ jobs:
       - run: 'make circle_build_kernel'
       - run: 'make btf_circle'
       - run: 'wget https://mirrors.edge.kernel.org/ubuntu/pool/main/libb/libbpf/libbpf0_0.5.0-1_amd64.deb'
-      - run: 'apt-get install -y ./libbpf0_0.5.0-1_amd64.deb'
+      - run: 'apt install -y ./libbpf0_0.5.0-1_amd64.deb'
       - run: 'make all'
       - run: 'make rpm'
       - run: 'make deb'
