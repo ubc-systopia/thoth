@@ -1,6 +1,8 @@
 arch=x86_64
 version=0.0.0
 
+export ARCH=x86
+
 circle_build_kernel:
 	git clone -b linux-rolling-stable --single-branch --depth 1 git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 	cd linux-stable && rm -rf .git

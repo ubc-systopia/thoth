@@ -6,7 +6,7 @@ orbs:
 jobs:
   build-test:
     docker:
-      - image: ubuntu:jammy
+      - image: kernelci/build-clang-13:latest
     resource_class: xlarge
     working_directory: ~/build
     steps:
@@ -17,7 +17,14 @@ jobs:
       - run: 'apt-get install -y libncursesw5-dev bc pkg-config zsh libelf-dev'
       - run: 'apt-get install -y bison flex binutils-dev gcc libinih-dev'
       - run: 'apt-get install -y uncrustify alien'
-      - run: 'apt-get install -y libbpf0'
+      - run: 'apt-get install -y git'
+      - run: 'apt-get install -y clang'
+      - run: 'apt-get install -y libssl-dev'
+      - run: 'apt-get install -y libcap-dev'
+      - run: 'apt-get install -y dwarves'
+      - run: 'wget http://mirrors.kernel.org/ubuntu/pool/universe/libb/libbpf/libbpf0_0.5.0-1~ubuntu20.04.1_amd64.deb'
+      - run: 'apt install -y ./libbpf0_0.5.0-1~ubuntu20.04.1_amd64.deb'
+      - run: 'pahole --version'
       - run: 'make circle_build_kernel'
       - run: 'make btf_circle'
       - run: 'make all'
