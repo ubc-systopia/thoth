@@ -22,7 +22,7 @@ jobs:
       - run: 'apt-get install -y git'
       - run: 'apt-get install -y clang'
       - run: 'apt-get install -y gcc-multilib'
-      - run: 'apt-get install -y bpftool'           
+      - run: 'apt-get install -y linux-tools-common'           
       - run: 'make btf_circle'
       - run: 'make all'
       - run: 'make rpm'
