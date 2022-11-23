@@ -35,6 +35,10 @@ jobs:
           root: .
           paths:
             - output
+      - store_artifacts:
+          path: ./output/thoth-0.0.0-1.x86_64.rpm
+      - store_artifacts:
+          path: ./output/thoth_0.0.0-2_amd64.deb
   publish:
     executor: cloudsmith/default
     working_directory: ~/build
