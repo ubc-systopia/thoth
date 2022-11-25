@@ -25,6 +25,8 @@ jobs:
       - run: 'wget http://mirrors.kernel.org/ubuntu/pool/universe/libb/libbpf/libbpf0_0.5.0-1~ubuntu20.04.1_amd64.deb'
       - run: 'apt install -y ./libbpf0_0.5.0-1~ubuntu20.04.1_amd64.deb'
       - run: 'pahole --version'
+      - run: 'make circle_build_kernel'
+      - run: 'make btf_circle'
       - run: 'make all'
       - run: 'make rpm'
       - run: 'make deb'
