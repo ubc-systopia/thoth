@@ -26,5 +26,6 @@ rm -r -f "$RPM_BUILD_ROOT"
 /usr/bin/thothd
 %defattr(644,root,root)
 /etc/systemd/system/thothd.service
+%defattr(755,root,root)
 /usr/bin/thoth
 %dir /var/thoth

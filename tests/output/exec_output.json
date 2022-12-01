@@ -1,0 +1,3 @@
+{"type":"Entity","id":"4554","annotations":{"inode_inum":"4554","uid":"0","path":"/root/usr/bin/python3.11"}}
+{"type":"Activity","id":"27888","annotations":{"pid":"27888",}}
+{"type":"Used","to":"4554","from":"27888","annotations":{"operation":"execute","utime":"0"}}
