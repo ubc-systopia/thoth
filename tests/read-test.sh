@@ -1,5 +1,7 @@
 #!/bin/bash
 
+wd=$(pwd)
+
 # Set up
 echo "Setting up read test..."
 mkdir test-workspace
@@ -15,15 +17,14 @@ echo "Testing read!" >> new_file.txt
 
 # Test
 
-sudo systemctl start thothd
+testwd="$wd/test-workspace"
 
-thoth --track-dir ./test-workspace
+echo "begin tracking: $testwd"
+sudo thoth --track-dir $testwd
 
 cd ./test-workspace
 
 cat new_file.txt
-
-sudo systemctl stop thothd
 
 echo "Test completed. Please check provenance logs."
 

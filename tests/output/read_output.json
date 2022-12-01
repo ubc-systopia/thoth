@@ -1,0 +1,6 @@
+{"type":"Entity","id":"3725","annotations":{"inode_inum":"3725","uid":"0","path":"/root/usr/bin/cat"}}
+{"type":"Activity","id":"27249","annotations":{"pid":"27249",}}
+{"type":"Used","to":"3725","from":"27249","annotations":{"operation":"execute","utime":"0"}}
+{"type":"Entity","id":"3895","annotations":{"inode_inum":"3895","uid":"1000","path":"/home/ncbouf/workspace/thoth/tests/test-workspace/new_file.txt"}}
+{"type":"Activity","id":"27249","annotations":{"pid":"27249",}}
+{"type":"Used","to":"3895","from":"27249","annotations":{"operation":"read","utime":"0"}}

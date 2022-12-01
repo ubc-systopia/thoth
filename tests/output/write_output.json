@@ -1,0 +1,3 @@
+{"type":"Entity","id":"3964","annotations":{"inode_inum":"3964","uid":"1000","path":"/workspace/thoth/tests/test-workspace/new_file.txt"}}
+{"type":"Activity","id":"27556","annotations":{"pid":"27556",}}
+{"type":"WasGeneratedBy","to":"27556","from":"3964","annotations":{"operation":"write","utime":"0"}}

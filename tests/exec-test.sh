@@ -1,5 +1,7 @@
 #!/bin/bash
 
+wd=$(pwd)
+
 # Set up
 echo "Setting up execute test..."
 mkdir test-workspace
@@ -11,19 +13,18 @@ fi
 
 touch test-workspace/test.py
 
-echo "Hello World" >> test-workspace/test.py
+echo "print(\"Hello World!i\")" >> test-workspace/test.py
 
 # Test
 
-sudo systemctl start thothd
+testwd="$wd/test-workspace"
 
-thoth --track-dir ./test-workspace
+echo "begin tracking: $testwd"
+thoth --track-dir $testwd
 
 cd ./test-workspace
 
 python test.py
-
-sudo systemctl stop thothd
 
 echo "Test completed. Please check provenance logs"
 
