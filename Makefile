@@ -1,5 +1,5 @@
 arch=x86_64
-version=0.0.0
+version=0.1.0
 
 export ARCH=x86
 

@@ -1,6 +1,6 @@
 Summary: Thoth service
 Name: thoth
-Version: 0.0.0
+Version: 0.1.0
 Release: 1
 License: ASL 2.0
 Source: %{expand:%%(pwd)}
