@@ -54,7 +54,7 @@ jobs:
           cloudsmith-repository: camflow/camflow
           package-path: output/thoth*.x86_64.rpm
           package-format: rpm
-          package-distribution: fedora/36
+          package-distribution: fedora/37
       - cloudsmith/publish:
           allow-republish: true
           cloudsmith-repository: camflow/camflow
