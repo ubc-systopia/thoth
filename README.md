@@ -21,6 +21,8 @@ To install the Thoth daemon and cli:
 
 ### Fedora
 
+Tested on Fedora 37.
+
 ```
 curl -1sLf 'https://dl.cloudsmith.io/public/camflow/camflow/cfg/setup/bash.rpm.sh' | sudo -E bash
 sudo dnf -y install thoth
@@ -54,3 +56,9 @@ Once the daemon has started, add directories to track using:
 `thoth --track-dir <directory_name>`
 
 The provenance log will be stored in the `/tmp/` directory.
+
+To stop the Thoth daemon:
+
+`sudo systemctl stop thothd`
+
+Currently there is no mechanism to remove a directory from tracking. Tracked directories are not persisted after the daemon stops, so to remove and add a new directory just stop and restart the daemon and add the new directory :)
