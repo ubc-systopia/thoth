@@ -211,13 +211,12 @@ void * cli_server(void *data)
 		if (n < 0)
 			perror("error reading from socket");
 
-		printf("%s\r\n", r_msg.arg[0]);
-
 		// TODO: remove and replace with real error msg
 		struct err_msg e_msg = {
 			.err = ERR_OK,
-			.msg = "Sucess!"
 		};
+
+		sprintf(e_msg.msg, "tracking: %s", r_msg.arg[0]);
 
 		cli_process_msg(&r_msg, &e_msg);
 
