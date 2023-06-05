@@ -26,7 +26,19 @@
 
 #define MAX_BUFFER_LEN 1024
 
+char date[DATE_LEN];
 int edge_id = 0;
+
+static void update_datetime()
+{
+	struct tm *tm;
+	time_t current_time = time(NULL);
+
+	tm = localtime(&current_time);
+
+	// need to lock and unlock
+	strftime(date, DATE_LEN, "%Y:%m:%dT%H:%M:%S", tm);
+}
 
 void add_name(char *buffer, char *name)
 {
@@ -201,6 +213,14 @@ void spade_write_edge(int fd, struct entry_t *entry)
 	strncat(buf, "\"", MAX_BUFFER_LEN);
 	strncat(buf, utime, MAX_BUFFER_LEN);
 	strncat(buf, "\"", MAX_BUFFER_LEN);
+
+	update_datetime();
+
+	strncat(buf, "\"date\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, date, MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+
 
 	// end json
 	strncat(buf, "}}\n", MAX_BUFFER_LEN);
