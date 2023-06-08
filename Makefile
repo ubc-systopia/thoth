@@ -65,7 +65,6 @@ uncrustify:
 	uncrustify -c uncrustify.cfg --replace track.c
 	uncrustify -c uncrustify.cfg --replace user.c
 	uncrustify -c uncrustify.cfg --replace common.h
-	uncrustify -c uncrustify.cfg --replace thoth.c
 
 uncrustify_clean:
 	rm *backup*~
