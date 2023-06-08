@@ -2,7 +2,7 @@ Summary: Thoth service
 Name: thoth
 Version: 0.1.0
 Release: 1
-License: ASL 2.0
+License: GPLv2
 Source: %{expand:%%(pwd)}
 BuildRoot: %{_topdir}/BUILD/%{name}-%{version}-%{release}
 
@@ -16,7 +16,6 @@ mkdir -p $RPM_BUILD_ROOT/etc/systemd/system
 mkdir -p $RPM_BUILD_ROOT/var/thoth
 cd $RPM_BUILD_ROOT
 cp -f %{SOURCEURL0}/thothd ./usr/bin/thothd
-cp -f %{SOURCEURL0}/thoth ./usr/bin/thoth
 cp -f %{SOURCEURL0}/thothd.service ./etc/systemd/system/thothd.service
 %clean
 rm -r -f "$RPM_BUILD_ROOT"
@@ -26,6 +25,4 @@ rm -r -f "$RPM_BUILD_ROOT"
 /usr/bin/thothd
 %defattr(644,root,root)
 /etc/systemd/system/thothd.service
-%defattr(755,root,root)
-/usr/bin/thoth
 %dir /var/thoth
