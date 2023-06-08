@@ -2,7 +2,7 @@ Summary: Thoth service
 Name: thoth
 Version: 0.1.0
 Release: 1
-License: ASL 2.0
+License: GPLv2
 Source: %{expand:%%(pwd)}
 BuildRoot: %{_topdir}/BUILD/%{name}-%{version}-%{release}
 
