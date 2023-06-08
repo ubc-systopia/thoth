@@ -56,12 +56,6 @@ user:
 	user.o \
 	-l:libbpf.so.0 -lpthread
 
-cli:
-	clang -Wall thoth.c -o thoth.o -c
-	clang -o thoth \
-	thoth.c \
-	-lpthread
-
 skel:
 	bpftool gen skeleton track.o > track.skel.h
 
@@ -76,7 +70,7 @@ uncrustify:
 uncrustify_clean:
 	rm *backup*~
 
-all: track skel user cli uncrustify uncrustify_clean
+all: track skel user uncrustify uncrustify_clean
 
 install:
 	sudo cp --force ./thothd /usr/bin/thothd
