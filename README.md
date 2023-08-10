@@ -5,7 +5,7 @@
 
 ## Development Setup
 
-## Dependencies
+### Dependencies
 
 Build dependencies: 
 `llvm bpftool linux-tools-common`
