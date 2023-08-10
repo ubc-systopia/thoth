@@ -5,6 +5,14 @@
 
 ## Development Setup
 
+## Dependencies
+
+Build dependencies: 
+`llvm bpftool linux-tools-common`
+
+Runtime dependencies:
+`libbpf`
+
 ### Build
 
 To build project run:
