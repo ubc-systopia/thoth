@@ -26,11 +26,11 @@
 #include "common.h"
 #include "record.h"
 #include "spade.c"
-#include "track.skel.h"
+#include "kernel.skel.h"
 
 #define MAX_LINE_SIZE 100
 
-static struct track *skel = NULL;
+static struct kernel *skel = NULL;
 static int fd;
 static int inode_track_index = 0;
 
@@ -51,13 +51,13 @@ static void sig_handler(int sig)
 {
 	if (sig == SIGTERM) {
 		syslog(LOG_INFO, "thoth: Received termination signal...");
-		track__destroy(skel);
+		kernel__destroy(skel);
 		exit(0);
 	}
 }
 
 // Start with adding just one id into the map
-int add_inode(struct track *skel, uint32_t index, uint64_t value)
+int add_inode(struct kernel *skel, uint32_t index, uint64_t value)
 {
 	int map_fd;
 	uint64_t id;
@@ -74,7 +74,7 @@ int add_inode(struct track *skel, uint32_t index, uint64_t value)
 }
 
 // TODO
-int remove_inode(struct track *skel, uint32_t index, uint64_t value)
+int remove_inode(struct kernel *skel, uint32_t index, uint64_t value)
 {
 	return 0;
 }
@@ -239,13 +239,13 @@ int main(int argc, char *argv[])
 
 	printf("starting...\r\n");
 
-	skel = track__open_and_load();
+	skel = kernel__open_and_load();
 	if (!skel) {
 		syslog(LOG_ERR, "Failed to load bpf skeleton");
 		goto close_prog;
 	}
 
-	err = track__attach(skel);
+	err = kernel__attach(skel);
 	if (err != 0)
 		syslog(LOG_ERR, "Error attaching skeleton\r\n");
 
@@ -268,5 +268,5 @@ int main(int argc, char *argv[])
 	}
 close_prog:
 	close(fd);
-	track__destroy(skel);
+	kernel__destroy(skel);
 }

@@ -46,9 +46,9 @@ btf:
 btf_circle:
 	cp -f .circleci/_vmlinux.h vmlinux.h
 
-track:
+kernel:
 	clang -O2 -Wall \
-	-target bpf -g -c track.c -o track.o
+	-target bpf -g -c kernel.c -o kernel.o
 
 user:
 	clang -Wall user.c -o user.o -c
@@ -57,19 +57,19 @@ user:
 	-l:libbpf.so.0 -lpthread
 
 skel:
-	bpftool gen skeleton track.o > track.skel.h
+	bpftool gen skeleton kernel.o > kernel.skel.h
 
 uncrustify:
 	uncrustify -c uncrustify.cfg --replace record.h
 	uncrustify -c uncrustify.cfg --replace spade.c
-	uncrustify -c uncrustify.cfg --replace track.c
+	uncrustify -c uncrustify.cfg --replace kernel.c
 	uncrustify -c uncrustify.cfg --replace user.c
 	uncrustify -c uncrustify.cfg --replace common.h
 
 uncrustify_clean:
 	rm *backup*~
 
-all: track skel user uncrustify uncrustify_clean
+all: kernel skel user uncrustify uncrustify_clean
 
 install:
 	sudo cp --force ./thothd /usr/bin/thothd

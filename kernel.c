@@ -51,7 +51,7 @@ struct {
 	__uint(type, BPF_MAP_TYPE_ARRAY);
 	__type(key, uint32_t);
 	__type(value, struct inode_elem);
-	__uint (max_entries, INODE_MAX_ENTRY);
+	__uint(max_entries, INODE_MAX_ENTRY);
 } inode_map SEC(".maps");
 
 // cache for inodes in tracking dir
