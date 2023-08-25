@@ -21,10 +21,16 @@
 
 extern char date[DATE_LEN];
 
-enum operation {
+enum file_op {
 	READ    = 1,
 	WRITE   = 2,
-	EXEC    = 3,
+	EXEC    = 3
+};
+
+enum sock_op {
+	CONNECT = 1,
+	ALLOC   = 2,
+	FREE    = 3
 };
 
 struct entry_t {
@@ -38,7 +44,17 @@ struct entry_t {
 	int proc_guid;
 	int file_path_depth;
 	char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
-	enum operation op;
+	enum file_op op;
+};
+
+struct sock_entry_t {
+	int pid;
+	enum sock_op op;
+};
+
+union prov_entry {
+	struct entry_t file_entry;
+	struct sock_entry_t sock_entry;
 };
 
 #endif
