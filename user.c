@@ -83,6 +83,25 @@ int remove_inode(struct kernel *skel, uint32_t index, uint64_t value)
 	return 0;
 }
 
+void write_socket(struct entry_t *entry)
+{
+	pthread_mutex_lock(&file_lock);
+	spade_write_node_socket(fd, entry);
+	spade_write_node_proc(fd, entry);
+	spade_write_edge_socket(fd, entry);
+	pthread_mutex_unlock(&file_lock);
+}
+
+void write_file(struct entry_t *entry, char *buffer)
+{
+	pthread_mutex_lock(&file_lock);
+	spade_write_node_file(fd, entry, buffer);
+	spade_write_node_proc(fd, entry);
+	spade_write_edge(fd, entry);
+	pthread_mutex_unlock(&file_lock);
+}
+
+
 void write_to_file(struct entry_t *entry, char *buffer)
 {
 	// should lock here

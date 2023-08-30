@@ -41,6 +41,16 @@ void add_name(char *buffer, char *name)
 	strncat(buffer, "\":", MAX_BUFFER_LEN);
 }
 
+void write_start_json(char *buffer)
+{
+	strncat(buffer, "{", MAX_BUFFER_LEN);
+}
+
+void write_end_json(char *buffer)
+{
+	strncat(buffer, "}", MAX_BUFFER_LEN);
+}
+
 void spade_write_node_proc(int fd, struct entry_t *entry)
 {
 	char buf[MAX_BUFFER_LEN];
@@ -55,7 +65,7 @@ void spade_write_node_proc(int fd, struct entry_t *entry)
 	sprintf(inode, "%u", entry->inode_inum);
 
 	// start json
-	strncat(buf, "{", MAX_BUFFER_LEN);
+	write_start_json(buf);
 
 	// type
 	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
@@ -126,6 +136,16 @@ void spade_write_node_file(int fd, struct entry_t *entry, char *buffer)
 	strncat(buf, "}}\n", MAX_BUFFER_LEN);
 
 	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
+}
+
+void spade_write_node_socket(int fd, struct entry_t *entry)
+{
+
+}
+
+void spade_write_edge_socket(int fd, struct entry_t *entry)
+{
+
 }
 
 void spade_write_edge(int fd, struct entry_t *entry)
