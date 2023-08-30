@@ -32,6 +32,7 @@
 
 static struct kernel *skel = NULL;
 static int fd;
+static pthread_mutex_t file_lock;
 static int inode_track_index = 0;
 
 static void init_log()
@@ -45,6 +46,9 @@ static void init_log()
 	strftime(filename, sizeof(filename), "/tmp/prov_%Y-%m-%d_%H:%M:%S.json", time_str);
 
 	fd = open(filename, O_RDWR | O_CREAT);
+
+	if (pthread_mutex_init(&file_lock, NULL) != 0)
+		syslog(LOG_ERR, "error: file mutex init");
 }
 
 static void sig_handler(int sig)
