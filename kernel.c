@@ -192,6 +192,32 @@ static int set_inode_tracking(struct inode_elem *inode)
 	return 0;
 }
 
+// given inode, check if it is in the directory we are tracking
+static int check_tracking(struct inode *inode, struct dentry *dentry)
+{
+	struct inode_elem *inode_el = bpf_inode_storage_get(&inode_storage_map, inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+
+	if (inode_el == NULL) {
+		bpf_printk("check_tracking: inode is NULL");
+		return 0;
+	}
+
+	// initialize node if not already, if not init then we walk file path to check tracking
+	if (inode_initialized(inode_el) == 0)
+		// walk directory and check if its in there
+		// inode not initialized (not cached)
+		if (in_tracking_dir(dentry) == 1) {
+			set_inode_tracking(inode_el);
+			bpf_printk("setting tracking bit to 1");
+			// return 1;
+		}
+
+	if (get_inode_tracking(inode_el) == 1)
+		return 1;
+
+	return 0;
+}
+
 #define MAX_NAME_LEN 16
 
 int read_path_name(struct entry_t *entry, struct dentry *dentry)
@@ -273,7 +299,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 	}
 
 	if ((perms & (FILE__EXECUTE)) != 0) {
-		new_entry.op = WRITE,
+		new_entry.op = EXEC,
 		read_path_name(&new_entry, file->f_path.dentry);
 		// bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
 		bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
@@ -285,29 +311,10 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 SEC("lsm/bprm_creds_for_exec")
 int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 {
-	struct inode_elem *inode;
 	struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
 
-	// check inode cache
-	inode = bpf_inode_storage_get(&inode_storage_map, current_task->fs->pwd.dentry->d_inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
-
-	if (inode == NULL) {
-		bpf_printk("something has gone wrong in inode storage");
+	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
 		return 0;
-	}
-
-	// initialize node if not already, if not init then we walk file path to check tracking
-	if (inode_initialized(inode) == 0)
-		// walk directory and check if its in there
-		// inode not initialized (not cached)
-		if (in_tracking_dir(current_task->fs->pwd.dentry) == 1) {
-			set_inode_tracking(inode);
-			// bpf_printk("setting tracking bit to 1");
-		}
-
-	if (get_inode_tracking(inode) == 0) {
-		return 0; // not tracking
-	}
 
 	struct entry_t new_entry = {
 		.pid = current_task->pid,
@@ -331,28 +338,11 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 {
 	struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
 
-	// check inode cache
-	struct inode_elem *inode = bpf_inode_storage_get(&inode_storage_map, current_task->fs->pwd.dentry->d_inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
-
-	if (inode == NULL) {
-		bpf_printk("something has gone wrong in inode storage");
+	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
 		return 0;
-	}
-
-	// initialize node if not already, if not init then we walk file path to check tracking
-	if (inode_initialized(inode) == 0)
-		// walk directory and check if its in there
-		// inode not initialized (not cached)
-		if (in_tracking_dir(current_task->fs->pwd.dentry) == 1) {
-			set_inode_tracking(inode);
-			// bpf_printk("setting tracking bit to 1");
-		}
-
-	if (get_inode_tracking(inode) == 0) {
-		return 0; // not tracking
-	}
 
 	struct sock_entry_t new_entry = {
+		.flag = ENTRY_TYPE_SOCK,
 		.pid = current_task->pid,
 		.op = CONNECT,
 	};
