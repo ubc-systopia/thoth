@@ -11,9 +11,13 @@
  *
  */
 
+#include <linux/limits.h>
+#include <linux/mman.h>
+
 #include "vmlinux.h"
 #include "record.h"
 #include "common.h"
+#include "kern/net.h"
 
 #define __kernel_size_t
 #define __kernel_fsid_t
@@ -344,10 +348,56 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 	struct sock_entry_t new_entry = {
 		.flag = ENTRY_TYPE_SOCK,
 		.pid = current_task->pid,
+		.family = address->sa_family,
 		.op = CONNECT,
 	};
 
+	if (address->sa_family == AF_INET)
+		bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in), address);
+	// else if (address->sa_family == AF_INET)
+	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in6), address);
+	// else if (address->sa_family == AF_UNIX)
+	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_un), address);
+	// else
+	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr), address);
+
 	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct sock_entry_t), 0);
 
+	return 0;
+}
+
+SEC("lsm/mmap_file")
+int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long prot, unsigned long flags)
+{
+	union prov_elt *tprov, *cprov, *iprov;
+	struct task_struct *current_task;
+	uint64_t type;
+
+	if (!file)
+		return 0;
+	if (is_inode_dir(file->f_inode))
+		return 0;
+
+	if ((flags & MAP_TYPE) != MAP_SHARED && (flags & MAP_TYPE) != MAP_SHARED_VALIDATE)
+		return 0;
+
+	current_task = (struct task_struct *)bpf_get_current_task_btf();
+
+	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
+		return 0;
+
+
+	struct entry_t new_entry = {
+		.pid = current_task->pid,
+		.utime = current_task->utime,
+		.gtime = current_task->gtime,
+		.inode_inum = file->f_inode->i_ino,
+		.inode_uid = file->f_inode->i_uid.val,
+		.inode_guid = file->f_inode->i_gid.val,
+		.op = MMAP,
+	};
+
+	read_path_name(&new_entry, file->f_path.dentry);
+	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 	return 0;
 }
