@@ -369,9 +369,7 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 SEC("lsm/mmap_file")
 int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long prot, unsigned long flags)
 {
-	union prov_elt *tprov, *cprov, *iprov;
 	struct task_struct *current_task;
-	uint64_t type;
 
 	if (!file)
 		return 0;
