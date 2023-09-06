@@ -24,7 +24,7 @@
 #include <time.h>
 
 #include "common.h"
-#include "record.h"
+#include "shared/record.h"
 #include "spade.c"
 #include "kernel.skel.h"
 
@@ -85,10 +85,12 @@ int remove_inode(struct kernel *skel, uint32_t index, uint64_t value)
 
 void write_socket(struct entry_t *entry)
 {
+	struct sock_entry_t *s = (struct sock_entry_t *)entry;
+
 	pthread_mutex_lock(&file_lock);
-	spade_write_node_socket(fd, entry);
+	spade_write_node_socket(fd, s);
 	spade_write_node_proc(fd, entry);
-	spade_write_edge_socket(fd, entry);
+	spade_write_edge_socket(fd, s);
 	pthread_mutex_unlock(&file_lock);
 }
 
@@ -104,11 +106,12 @@ void write_file(struct entry_t *entry, char *buffer)
 
 void write_to_file(struct entry_t *entry, char *buffer)
 {
-	// should lock here
-	spade_write_node_file(fd, entry, buffer);
-	spade_write_node_proc(fd, entry);
-	spade_write_edge(fd, entry);
-	// should unlock here
+	if (entry->flag == ENTRY_TYPE_FILE) {
+		spade_write_node_file(fd, entry, buffer);
+		spade_write_node_proc(fd, entry);
+		spade_write_edge(fd, entry);
+	} else if (entry->flag == ENTRY_TYPE_SOCK)
+		write_socket(entry);
 }
 
 // this is a temporary fix for resolving the file path

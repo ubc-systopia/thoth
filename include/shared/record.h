@@ -21,19 +21,25 @@
 
 extern char date[DATE_LEN];
 
+#define ENTRY_TYPE_FILE 0
+#define ENTRY_TYPE_SOCK 1
+
 enum file_op {
 	READ    = 1,
 	WRITE   = 2,
-	EXEC    = 3
+	EXEC    = 3,
+	MMAP    = 4
 };
 
 enum sock_op {
 	CONNECT = 1,
 	ALLOC   = 2,
-	FREE    = 3
+	FREE    = 3,
+	RCV_BUF = 4
 };
 
 struct entry_t {
+	uint32_t flag;
 	int pid;
 	int utime;
 	int gtime;
@@ -48,7 +54,10 @@ struct entry_t {
 };
 
 struct sock_entry_t {
+	uint32_t flag;
 	int pid;
+	struct sockaddr addr;
+	int family;
 	enum sock_op op;
 };
 

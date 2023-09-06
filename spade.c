@@ -13,10 +13,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <stdbool.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <time.h>
 
-#include "record.h"
-
-#define MAX_BUFFER_LEN 1024
+#include "user/json.h"
+#include "user/net.c"
+#include "shared/record.h"
 
 char date[DATE_LEN];
 pthread_rwlock_t date_lock;
@@ -34,11 +40,30 @@ static void update_datetime()
 	pthread_rwlock_unlock(&date_lock);
 }
 
+static void write_datetime(char *buffer, bool delim)
+{
+	update_datetime();
+
+	strncat(buffer, "\"date\":", MAX_BUFFER_LEN);
+	strncat(buffer, "\"", MAX_BUFFER_LEN);
+	pthread_rwlock_wrlock(&date_lock);
+	strncat(buffer, date, MAX_BUFFER_LEN);
+	pthread_rwlock_unlock(&date_lock);
+	strncat(buffer, "\"", MAX_BUFFER_LEN);
+	if (delim)
+		strncat(buffer, ",", MAX_BUFFER_LEN);
+}
+
 void add_name(char *buffer, char *name)
 {
 	strncat(buffer, "\"", MAX_BUFFER_LEN);
 	strncat(buffer, name, MAX_BUFFER_LEN);
 	strncat(buffer, "\":", MAX_BUFFER_LEN);
+}
+
+void init_buffer(char *buffer)
+{
+	buffer[0] = '\0';
 }
 
 void write_start_json(char *buffer)
@@ -47,6 +72,16 @@ void write_start_json(char *buffer)
 }
 
 void write_end_json(char *buffer)
+{
+	strncat(buffer, "}", MAX_BUFFER_LEN);
+}
+
+void write_start_annotations(char *buffer)
+{
+	strncat(buffer, "\"annotations\":{", MAX_BUFFER_LEN);
+}
+
+void write_end_annotations(char *buffer)
 {
 	strncat(buffer, "}", MAX_BUFFER_LEN);
 }
@@ -138,14 +173,52 @@ void spade_write_node_file(int fd, struct entry_t *entry, char *buffer)
 	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
-void spade_write_node_socket(int fd, struct entry_t *entry)
+void spade_write_node_socket(int fd, struct sock_entry_t *entry)
 {
+	char buf[MAX_BUFFER_LEN];
 
+	init_buffer(buf);
+
+	write_start_json(buf);
+
+	write_start_annotations(buf);
+
+	write_address_string(entry, buf);
+
+	write_end_annotations(buf);
+	write_end_json(buf);
+
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
-void spade_write_edge_socket(int fd, struct entry_t *entry)
+void spade_write_edge_socket(int fd, struct sock_entry_t *entry)
 {
+	char buf[MAX_BUFFER_LEN];
 
+	init_buffer(buf);
+
+	write_start_json(buf);
+
+	char pid[32];
+
+	sprintf(pid, "%u", entry->pid);
+
+	char operation[32];
+
+	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
+
+	if (entry->op == CONNECT)
+		sprintf(operation, "%s", "socket_connect");
+
+	write_start_annotations(buf);
+
+	write_datetime(buf, false);
+
+	write_end_annotations(buf);
+	write_end_json(buf);
+
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
 void spade_write_edge(int fd, struct entry_t *entry)
@@ -175,6 +248,8 @@ void spade_write_edge(int fd, struct entry_t *entry)
 		sprintf(operation, "%s", "write");
 	else if (entry->op == EXEC)
 		sprintf(operation, "%s", "execute");
+	else if (entry->op == MMAP)
+		sprintf(operation, "%s", "mmap");
 
 	// start json
 	strncat(buf, "{", MAX_BUFFER_LEN);
@@ -185,10 +260,10 @@ void spade_write_edge(int fd, struct entry_t *entry)
 		strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 	else if (entry->op == WRITE)
 		strncat(buf, "\"WasGeneratedBy\",", MAX_BUFFER_LEN);
-	else if (entry->op == EXEC)
+	else if (entry->op == EXEC || entry->op == MMAP)
 		strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 
-	if (entry->op == READ || entry->op == EXEC) {
+	if (entry->op == READ || entry->op == EXEC || entry->op == MMAP) {
 		// to
 		strncat(buf, "\"to\":", MAX_BUFFER_LEN);
 		strncat(buf, "\"", MAX_BUFFER_LEN);

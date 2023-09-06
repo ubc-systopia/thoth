@@ -48,10 +48,11 @@ btf_circle:
 
 kernel:
 	clang -O2 -Wall \
+	-Iinclude \
 	-target bpf -g -c kernel.c -o kernel.o
 
 user:
-	clang -Wall user.c -o user.o -c
+	clang -Wall user.c -o user.o -Iinclude -c
 	clang -o thothd \
 	user.o \
 	-l:libbpf.so.0 -lpthread

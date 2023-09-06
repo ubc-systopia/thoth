@@ -15,7 +15,7 @@
 #include <linux/mman.h>
 
 #include "vmlinux.h"
-#include "record.h"
+#include "shared/record.h"
 #include "common.h"
 #include "kern/net.h"
 
