@@ -35,7 +35,7 @@ enum sock_op {
 	CONNECT = 1,
 	ALLOC   = 2,
 	FREE    = 3,
-	RCV_BUF = 4
+	RCV_SKB = 4
 };
 
 struct entry_t {
@@ -58,6 +58,9 @@ struct sock_entry_t {
 	int pid;
 	struct sockaddr addr;
 	int family;
+	uint32_t saddr;
+	uint32_t daddr;
+	uint32_t port;
 	enum sock_op op;
 };
 

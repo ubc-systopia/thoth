@@ -21,7 +21,7 @@
 #include <time.h>
 
 #include "user/json.h"
-#include "user/net.c"
+#include "net.c"
 #include "shared/record.h"
 
 char date[DATE_LEN];
@@ -73,7 +73,7 @@ void write_start_json(char *buffer)
 
 void write_end_json(char *buffer)
 {
-	strncat(buffer, "}", MAX_BUFFER_LEN);
+	strncat(buffer, "}\n", MAX_BUFFER_LEN);
 }
 
 void write_start_annotations(char *buffer)
@@ -181,9 +181,19 @@ void spade_write_node_socket(int fd, struct sock_entry_t *entry)
 
 	write_start_json(buf);
 
+	// TODO: make helper fn
+	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"Entity\",", MAX_BUFFER_LEN);
+
+	strncat(buf, "\"id\":\"", MAX_BUFFER_LEN);
+	get_socket_id(entry, buf);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
 	write_start_annotations(buf);
 
-	write_address_string(entry, buf);
+	write_address_string(entry, buf, true);
+
+	write_family_string(entry, buf, false);
 
 	write_end_annotations(buf);
 	write_end_json(buf);
@@ -208,10 +218,27 @@ void spade_write_edge_socket(int fd, struct sock_entry_t *entry)
 	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
 	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 
+	strncat(buf, "\"to\":\"", MAX_BUFFER_LEN);
+	get_socket_id(entry, buf);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
+	// from
+	strncat(buf, "\"from\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, pid, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
 	if (entry->op == CONNECT)
 		sprintf(operation, "%s", "socket_connect");
+	if (entry->op == RCV_SKB)
+		sprintf(operation, "%s", "socket_rcv_skb");
 
 	write_start_annotations(buf);
+
+	strncat(buf, "\"operation\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, operation, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
 
 	write_datetime(buf, false);
 
