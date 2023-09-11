@@ -61,7 +61,7 @@ skel:
 	bpftool gen skeleton kernel.o > kernel.skel.h
 
 uncrustify:
-	uncrustify -c uncrustify.cfg --replace record.h
+	uncrustify -c uncrustify.cfg --replace include/shared/record.h
 	uncrustify -c uncrustify.cfg --replace spade.c
 	uncrustify -c uncrustify.cfg --replace kernel.c
 	uncrustify -c uncrustify.cfg --replace user.c

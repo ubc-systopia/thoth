@@ -23,7 +23,8 @@ static void write_address_string(struct sock_entry_t *entry, char* buffer, bool 
             write_key_val_str(buffer, "host", host, true);
             write_key_val_str(buffer, "serv", serv, true); 
         } else {
-            printf("error with getnameinfo?? undefined host and serv...\r\n");
+            write_key_val_str(buffer, "host", "unknown", true);
+            write_key_val_str(buffer, "serv", "unknown", true);
         }
         err = getnameinfo(ad, sizeof(struct sockaddr_in), host, NI_MAXHOST, serv, NI_MAXSERV, 0);
         if (err == 0) {
@@ -36,7 +37,8 @@ static void write_address_string(struct sock_entry_t *entry, char* buffer, bool 
             write_key_val_str(buffer, "host", host, true);
             write_key_val_str(buffer, "serv", serv, true); 
         } else {
-            printf("error with getnameinfo?? undefined host and serv...\r\n");
+            write_key_val_str(buffer, "host", "unknown", true);
+            write_key_val_str(buffer, "serv", "unknown", true);
         }
         err = getnameinfo(ad, sizeof(struct sockaddr_in6), host, NI_MAXHOST, serv, NI_MAXSERV, 0);
         if (err == 0) {
@@ -46,8 +48,8 @@ static void write_address_string(struct sock_entry_t *entry, char* buffer, bool 
     } else if (ad->sa_family == AF_UNIX) {
         err = getnameinfo(ad, sizeof(struct sockaddr), host, NI_MAXHOST, serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
         if (err == 0) {
-            write_key_val_str(buffer, "host_name", host, true);
-            write_key_val_str(buffer, "serv_name", serv, delim);
+            write_key_val_str(buffer, "host", host, true);
+            write_key_val_str(buffer, "serv", serv, delim);
         }
     } else {
         err = getnameinfo(ad, sizeof(struct sockaddr), host, NI_MAXHOST, serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
@@ -55,7 +57,8 @@ static void write_address_string(struct sock_entry_t *entry, char* buffer, bool 
             write_key_val_str(buffer, "host", host, true);
             write_key_val_str(buffer, "serv", serv, true); 
         } else {
-            printf("error with getnameinfo?? undefined host and serv...\r\n");
+            write_key_val_str(buffer, "host", "unknown", true);
+            write_key_val_str(buffer, "serv", "unknown", true);
         }
         err = getnameinfo(ad, sizeof(struct sockaddr), host, NI_MAXHOST, serv, NI_MAXSERV, 0);
         if (err == 0) {
@@ -106,8 +109,8 @@ static void get_socket_id(struct sock_entry_t *entry, char* buffer)
     }
 
 	strncat(buffer, protocol, MAX_BUFFER_LEN);
-    strncat(buffer, ":", MAX_BUFFER_LEN);
+    strncat(buffer, "-", MAX_BUFFER_LEN);
     strncat(buffer, address, MAX_BUFFER_LEN);
-    strncat(buffer, ":", MAX_BUFFER_LEN);
+    strncat(buffer, "-", MAX_BUFFER_LEN);
     strncat(buffer, port, MAX_BUFFER_LEN);
 }

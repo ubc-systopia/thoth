@@ -115,9 +115,7 @@ void spade_write_node_proc(int fd, struct entry_t *entry)
 	// annotations
 	strncat(buf, "\"annotations\":{", MAX_BUFFER_LEN);
 
-	strncat(buf, "\"pid\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, pid, MAX_BUFFER_LEN);
+	write_key_val_str(buf, "pid", pid, false);
 
 	// end json
 	strncat(buf, "}}\n", MAX_BUFFER_LEN);
