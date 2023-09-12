@@ -345,6 +345,9 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
 		return 0;
 
+	if (address->sa_family == AF_UNSPEC)
+		return 0;
+
 	struct sock_entry_t new_entry = {
 		.flag = ENTRY_TYPE_SOCK,
 		.pid = current_task->pid,
@@ -366,43 +369,43 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 	return 0;
 }
 
-SEC("lsm/socket_sock_rcv_skb")
-int BPF_PROG(socket_sock_rcv_skb, struct sock *sk, struct sk_buff *skb)
-{
-	struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
+// SEC("lsm/socket_sock_rcv_skb")
+// int BPF_PROG(socket_sock_rcv_skb, struct sock *sk, struct sk_buff *skb)
+// {
+// 	struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
 
-	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
-		return 0;
+// 	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
+// 		return 0;
 
-	struct sock_entry_t new_entry = {
-		.flag = ENTRY_TYPE_SOCK,
-		.pid = current_task->pid,
-		.family = sk->__sk_common.skc_family,
-		.port = sk->__sk_common.skc_dport,
-		.daddr = sk->__sk_common.skc_daddr,
-		.saddr = sk->__sk_common.skc_rcv_saddr,
-		.op = RCV_SKB,
-	};
+// 	struct sock_entry_t new_entry = {
+// 		.flag = ENTRY_TYPE_SOCK,
+// 		.pid = current_task->pid,
+// 		.family = sk->__sk_common.skc_family,
+// 		.port = sk->__sk_common.skc_dport,
+// 		.daddr = sk->__sk_common.skc_daddr,
+// 		.saddr = sk->__sk_common.skc_rcv_saddr,
+// 		.op = RCV_SKB,
+// 	};
 
-	bpf_printk("family: %u", sk->__sk_common.skc_family);
-	bpf_printk("daddr: %u", sk->__sk_common.skc_daddr);
-	bpf_printk("saddr: %u", sk->__sk_common.skc_rcv_saddr);
-	bpf_printk("dport: %u", sk->__sk_common.skc_dport);
-	bpf_printk("num: %u", sk->__sk_common.skc_num);
+// 	bpf_printk("family: %u", sk->__sk_common.skc_family);
+// 	bpf_printk("daddr: %u", sk->__sk_common.skc_daddr);
+// 	bpf_printk("saddr: %u", sk->__sk_common.skc_rcv_saddr);
+// 	bpf_printk("dport: %u", sk->__sk_common.skc_dport);
+// 	bpf_printk("num: %u", sk->__sk_common.skc_num);
 
-	// if (address->sa_family == AF_INET)
-	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in), address);
-	// else if (address->sa_family == AF_INET)
-	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in6), address);
-	// else if (address->sa_family == AF_UNIX)
-	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_un), address);
-	// else
-	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr), address);
+// 	// if (address->sa_family == AF_INET)
+// 	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in), address);
+// 	// else if (address->sa_family == AF_INET)
+// 	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_in6), address);
+// 	// else if (address->sa_family == AF_UNIX)
+// 	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr_un), address);
+// 	// else
+// 	// 	bpf_probe_read_kernel(&new_entry.addr, sizeof(struct sockaddr), address);
 
-	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct sock_entry_t), 0);
+// 	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct sock_entry_t), 0);
 
-	return 0;
-}
+// 	return 0;
+// }
 
 SEC("lsm/mmap_file")
 int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long prot, unsigned long flags)

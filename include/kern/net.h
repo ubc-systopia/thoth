@@ -15,6 +15,8 @@
 
 #define ADDR_MAX PATH_MAX
 
+// Address family macros from Linux kernel /include/linux/socket.h
+#define AF_UNSPEC 0
 #define AF_UNIX 1
 #define AF_INET 2
 #define AF_INET6 10
