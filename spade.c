@@ -325,7 +325,7 @@ void spade_write_edge(int fd, struct entry_t *entry)
 	strncat(buf, "\"utime\":", MAX_BUFFER_LEN);
 	strncat(buf, "\"", MAX_BUFFER_LEN);
 	strncat(buf, utime, MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
 
 	update_datetime();
 

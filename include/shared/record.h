@@ -13,8 +13,8 @@
 #ifndef __RECORD_H
 #define __RECORD_H
 
-#define PATH_DEPTH_MAX 12
-#define PATH_NAME_MAX 32
+#define PATH_DEPTH_MAX 8
+#define PATH_NAME_MAX 48
 #define TOTAL_PATH_MAX PATH_DEPTH_MAX *PATH_NAME_MAX
 
 #define DATE_LEN 256
