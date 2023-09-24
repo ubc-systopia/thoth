@@ -42,6 +42,11 @@ struct inode_elem {
 	struct bpf_spin_lock lock;
 };
 
+struct inode_elem_no_lock {
+	uint32_t id;
+	uint8_t flag;
+};
+
 // MAPS
 
 // ring buffer
@@ -54,7 +59,7 @@ struct {
 struct {
 	__uint(type, BPF_MAP_TYPE_ARRAY);
 	__type(key, uint32_t);
-	__type(value, struct inode_elem);
+	__type(value, struct inode_elem_no_lock);
 	__uint(max_entries, INODE_MAX_ENTRY);
 } inode_map SEC(".maps");
 
@@ -101,6 +106,13 @@ struct {
 #define TRACKED_BIT 1
 #define inode_set_tracked(inode)      inode_set_flag(inode, TRACKED_BIT)
 #define inode_is_tracked(inode)       inode_check_flag(inode, TRACKED_BIT)
+
+#define _(P)							\
+	({							\
+		typeof(P) val = 0;				\
+		bpf_probe_read_kernel(&val, sizeof(val), &(P));	\
+		val;						\
+	})
 
 
 // FUNCTIONS
@@ -222,6 +234,36 @@ static int check_tracking(struct inode *inode, struct dentry *dentry)
 	return 0;
 }
 
+static int check_tracking_no_lock(struct inode *inode, struct dentry *dentry)
+{
+	// struct inode_elem *inode_el = bpf_inode_storage_get(&inode_storage_map, inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
+
+	// if (inode_el == NULL) {
+	// 	bpf_printk("check_tracking: inode is NULL");
+	// 	return 0;
+	// }
+
+	if (in_tracking_dir(dentry) == 1) {
+		bpf_printk("setting tracking bit to 1");
+		return 1;
+	}
+
+	// // initialize node if not already, if not init then we walk file path to check tracking
+	// if (inode_initialized(inode_el) == 0)
+	// 	// walk directory and check if its in there
+	// 	// inode not initialized (not cached)
+	// 	if (in_tracking_dir(dentry) == 1) {
+	// 	//	set_inode_tracking(inode_el);
+	// 		bpf_printk("setting tracking bit to 1");
+	// 		// return 1;
+	// 	}
+
+	// if (get_inode_tracking(inode_el) == 1)
+	// 	return 1;
+
+	return 0;
+}
+
 #define MAX_NAME_LEN 16
 
 int read_path_name(struct entry_t *entry, struct dentry *dentry)
@@ -320,6 +362,8 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
 		return 0;
 
+	bpf_printk("creds for exec, argc: %u, envc: %u", bprm->argc, bprm->envc);
+
 	struct entry_t new_entry = {
 		.pid = current_task->pid,
 		.utime = current_task->utime,
@@ -332,6 +376,51 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 
 	read_path_name(&new_entry, bprm->file->f_path.dentry);
 	// bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
+	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
+
+	return 0;
+}
+
+SEC("tracepoint/syscalls/sys_enter_execve")
+int tracepoint__syscalls__sys_enter_execve(struct trace_event_raw_sys_enter *ctx)
+{
+	struct task_struct *current_task = (struct task_struct *)bpf_get_current_task_btf();
+
+	if (check_tracking_no_lock(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
+		return 0;
+
+	const char **args = (const char **)(ctx->args[1]);
+	const char *argp;
+
+	int ret;
+
+	struct command_entry_t new_entry = {
+		.flag = ENTRY_TYPE_COMMAND,
+		.pid = current_task->pid,
+		.args_count = 0,
+		.op = EXECVE,
+	};
+
+	ret = bpf_probe_read_user_str(&new_entry.args, ARGS_SIZE_MAX, (const char *)ctx->args[0]);
+	new_entry.args_count++;
+
+	// bpf_printk("arg: %s", new_entry.args);
+
+	for (int i = 1; i < ARGS_MAX; i++) {
+		ret = bpf_probe_read_user(&argp, sizeof(argp), &args[i]);
+		if (ret < 0)
+			break;
+
+		ret = bpf_probe_read_user_str(&new_entry.args[i], ARGS_SIZE_MAX, argp);
+		if (ret < 0)
+			break;
+
+		// bpf_printk("arg[%u]: %s", i, new_entry.args[i]);
+
+		new_entry.args_count++;
+		new_entry.args_size += ret;
+	}
+
 	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 
 	return 0;

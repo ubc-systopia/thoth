@@ -35,6 +35,9 @@ static int fd;
 static pthread_mutex_t file_lock;
 static int inode_track_index = 0;
 
+// use sequential increasing IDs for now
+static int command_id = 0;
+
 static void init_log()
 {
 	char filename[40];
@@ -103,6 +106,18 @@ void write_file(struct entry_t *entry, char *buffer)
 	pthread_mutex_unlock(&file_lock);
 }
 
+void write_command(struct entry_t *entry)
+{
+	struct command_entry_t *c = (struct command_entry_t *)entry;
+
+	pthread_mutex_lock(&file_lock);
+	spade_write_node_command(fd, c, command_id);
+	spade_write_node_proc(fd, entry);
+	spade_write_edge_command(fd, c, command_id);
+	command_id++;
+	pthread_mutex_unlock(&file_lock);
+}
+
 
 void write_to_file(struct entry_t *entry, char *buffer)
 {
@@ -112,6 +127,8 @@ void write_to_file(struct entry_t *entry, char *buffer)
 		spade_write_edge(fd, entry);
 	} else if (entry->flag == ENTRY_TYPE_SOCK)
 		write_socket(entry);
+	else if (entry->flag == ENTRY_TYPE_COMMAND)
+		write_command(entry);
 }
 
 // this is a temporary fix for resolving the file path

@@ -17,18 +17,23 @@
 #define PATH_NAME_MAX 48
 #define TOTAL_PATH_MAX PATH_DEPTH_MAX *PATH_NAME_MAX
 
+#define ARGS_MAX 8
+#define ARGS_SIZE_MAX 48
+
 #define DATE_LEN 256
 
 extern char date[DATE_LEN];
 
 #define ENTRY_TYPE_FILE 0
 #define ENTRY_TYPE_SOCK 1
+#define ENTRY_TYPE_COMMAND 2
 
 enum file_op {
 	READ    = 1,
 	WRITE   = 2,
 	EXEC    = 3,
-	MMAP    = 4
+	MMAP    = 4,
+	EXECVE  = 5
 };
 
 enum sock_op {
@@ -64,9 +69,22 @@ struct sock_entry_t {
 	enum sock_op op;
 };
 
+struct command_entry_t {
+	uint32_t flag;
+	int pid;
+	int utime;
+	unsigned int inode_inum;
+	int args_count;
+	int args_size;
+	int proc_uid;
+	char args[ARGS_MAX][ARGS_SIZE_MAX];
+	enum file_op op;
+};
+
 union prov_entry {
 	struct entry_t file_entry;
 	struct sock_entry_t sock_entry;
+	struct command_entry_t command_entry;
 };
 
 #endif

@@ -216,6 +216,7 @@ void spade_write_edge_socket(int fd, struct sock_entry_t *entry)
 	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
 	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 
+	// to
 	strncat(buf, "\"to\":\"", MAX_BUFFER_LEN);
 	get_socket_id(entry, buf);
 	strncat(buf, "\",", MAX_BUFFER_LEN);
@@ -230,6 +231,90 @@ void spade_write_edge_socket(int fd, struct sock_entry_t *entry)
 		sprintf(operation, "%s", "socket_connect");
 	if (entry->op == RCV_SKB)
 		sprintf(operation, "%s", "socket_rcv_skb");
+
+	write_start_annotations(buf);
+
+	strncat(buf, "\"operation\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, operation, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
+	write_datetime(buf, false);
+
+	write_end_annotations(buf);
+	write_end_json(buf);
+
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
+}
+
+void spade_write_node_command(int fd, struct command_entry_t *entry, int id)
+{
+	char buf[MAX_BUFFER_LEN];
+
+	char command_id[32];
+
+	sprintf(command_id, "c%u", id);
+
+	char args_count[32];
+
+	sprintf(args_count, "%u", entry->args_count);
+
+	init_buffer(buf);
+
+	write_start_json(buf);
+
+	// type
+	write_key_val_str(buf, "type", "Entity", true);
+	// id
+	write_key_val_str(buf, "id", command_id, true);
+
+	write_start_annotations(buf);
+	write_key_val_str(buf, "command", entry->args[0], true);
+	for (int i = 1; i < entry->args_count; i++) {
+		char arg[32];
+		sprintf(arg, "arg[%u]", i);
+		write_key_val_str(buf, arg, entry->args[i], true);
+	}
+	write_key_val_str(buf, "args_count", args_count, false);
+
+	write_end_annotations(buf);
+	write_end_json(buf);
+
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
+}
+
+void spade_write_edge_command(int fd, struct command_entry_t *entry, int id)
+{
+	char buf[MAX_BUFFER_LEN];
+
+	init_buffer(buf);
+
+	write_start_json(buf);
+
+	char pid[32];
+
+	sprintf(pid, "%u", entry->pid);
+	char command_id[32];
+
+	sprintf(command_id, "c%u", id);
+	char operation[32];
+
+	sprintf(operation, "%s", "executed_command");
+
+	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
+
+	// to
+	strncat(buf, "\"to\":\"", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, command_id, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
+	// from
+	strncat(buf, "\"from\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, pid, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
 
 	write_start_annotations(buf);
 
