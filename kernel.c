@@ -264,8 +264,6 @@ static int check_tracking_no_lock(struct inode *inode, struct dentry *dentry)
 	return 0;
 }
 
-#define MAX_NAME_LEN 16
-
 int read_path_name(struct entry_t *entry, struct dentry *dentry)
 {
 	struct dentry *d = dentry;
@@ -274,7 +272,7 @@ int read_path_name(struct entry_t *entry, struct dentry *dentry)
 		if (d == d->d_parent || d == NULL)
 			break;
 
-		int len = bpf_probe_read_kernel_str(&entry->file_path[i], MAX_NAME_LEN, d->d_iname);
+		int len = bpf_probe_read_kernel_str(&entry->file_path[i], PATH_NAME_MAX, d->d_iname);
 		bpf_printk("read %u bytes", len);
 		bpf_printk("%s", entry->file_path[i]);
 		entry->file_path_depth++;
@@ -333,21 +331,18 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 	if ((perms & (FILE__READ)) != 0) {
 		new_entry.op = READ,
 		read_path_name(&new_entry, file->f_path.dentry);
-		// bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
 		bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 	}
 
 	if ((perms & (FILE__WRITE)) != 0) {
 		new_entry.op = WRITE,
 		read_path_name(&new_entry, file->f_path.dentry);
-		// bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
 		bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 	}
 
 	if ((perms & (FILE__EXECUTE)) != 0) {
 		new_entry.op = EXEC,
 		read_path_name(&new_entry, file->f_path.dentry);
-		// bpf_probe_read_kernel_str(new_entry.file_name, MAX_NAME_LEN, file->f_path.dentry->d_iname);
 		bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 	}
 
