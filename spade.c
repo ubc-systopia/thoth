@@ -305,7 +305,7 @@ void spade_write_edge_command(int fd, struct command_entry_t *entry, int id)
 	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 
 	// to
-	strncat(buf, "\"to\":\"", MAX_BUFFER_LEN);
+	strncat(buf, "\"to\":", MAX_BUFFER_LEN);
 	strncat(buf, "\"", MAX_BUFFER_LEN);
 	strncat(buf, command_id, MAX_BUFFER_LEN);
 	strncat(buf, "\",", MAX_BUFFER_LEN);
@@ -407,10 +407,10 @@ void spade_write_edge(int fd, struct entry_t *entry)
 	strncat(buf, operation, MAX_BUFFER_LEN);
 	strncat(buf, "\",", MAX_BUFFER_LEN);
 
-	strncat(buf, "\"utime\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, utime, MAX_BUFFER_LEN);
-	strncat(buf, "\",", MAX_BUFFER_LEN);
+	// strncat(buf, "\"utime\":", MAX_BUFFER_LEN);
+	// strncat(buf, "\"", MAX_BUFFER_LEN);
+	// strncat(buf, utime, MAX_BUFFER_LEN);
+	// strncat(buf, "\",", MAX_BUFFER_LEN);
 
 	update_datetime();
 
