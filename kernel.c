@@ -501,7 +501,7 @@ int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long 
 	if (is_inode_dir(file->f_inode))
 		return 0;
 
-	if ((flags & MAP_TYPE) != MAP_SHARED && (flags & MAP_TYPE) != MAP_SHARED_VALIDATE)
+	if ((prot & PROT_EXEC) != PROT_EXEC)
 		return 0;
 
 	current_task = (struct task_struct *)bpf_get_current_task_btf();
@@ -509,11 +509,9 @@ int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long 
 	if (check_tracking(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
 		return 0;
 
-
 	struct entry_t new_entry = {
 		.pid = current_task->pid,
 		.utime = current_task->utime,
-		.gtime = current_task->gtime,
 		.inode_inum = file->f_inode->i_ino,
 		.inode_uid = file->f_inode->i_uid.val,
 		.inode_guid = file->f_inode->i_gid.val,
