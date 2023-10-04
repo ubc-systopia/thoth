@@ -236,30 +236,8 @@ static int check_tracking(struct inode *inode, struct dentry *dentry)
 
 static int check_tracking_no_lock(struct inode *inode, struct dentry *dentry)
 {
-	// struct inode_elem *inode_el = bpf_inode_storage_get(&inode_storage_map, inode, 0, BPF_LOCAL_STORAGE_GET_F_CREATE);
-
-	// if (inode_el == NULL) {
-	// 	bpf_printk("check_tracking: inode is NULL");
-	// 	return 0;
-	// }
-
-	if (in_tracking_dir(dentry) == 1) {
-		bpf_printk("setting tracking bit to 1");
+	if (in_tracking_dir(dentry) == 1)
 		return 1;
-	}
-
-	// // initialize node if not already, if not init then we walk file path to check tracking
-	// if (inode_initialized(inode_el) == 0)
-	// 	// walk directory and check if its in there
-	// 	// inode not initialized (not cached)
-	// 	if (in_tracking_dir(dentry) == 1) {
-	// 	//	set_inode_tracking(inode_el);
-	// 		bpf_printk("setting tracking bit to 1");
-	// 		// return 1;
-	// 	}
-
-	// if (get_inode_tracking(inode_el) == 1)
-	// 	return 1;
 
 	return 0;
 }
@@ -370,7 +348,6 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 	};
 
 	read_path_name(&new_entry, bprm->file->f_path.dentry);
-	// bpf_probe_read_kernel_str(new_entry.file_name, FILE_PATH_MAX, bprm->file->f_path.dentry->d_iname);
 	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
 
 	return 0;
@@ -399,8 +376,6 @@ int tracepoint__syscalls__sys_enter_execve(struct trace_event_raw_sys_enter *ctx
 	ret = bpf_probe_read_user_str(&new_entry.args, ARGS_SIZE_MAX, (const char *)ctx->args[0]);
 	new_entry.args_count++;
 
-	// bpf_printk("arg: %s", new_entry.args);
-
 	for (int i = 1; i < ARGS_MAX; i++) {
 		ret = bpf_probe_read_user(&argp, sizeof(argp), &args[i]);
 		if (ret < 0)
@@ -409,8 +384,6 @@ int tracepoint__syscalls__sys_enter_execve(struct trace_event_raw_sys_enter *ctx
 		ret = bpf_probe_read_user_str(&new_entry.args[i], ARGS_SIZE_MAX, argp);
 		if (ret < 0)
 			break;
-
-		// bpf_printk("arg[%u]: %s", i, new_entry.args[i]);
 
 		new_entry.args_count++;
 		new_entry.args_size += ret;
@@ -453,6 +426,8 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 	return 0;
 }
 
+// did not find this hook to be useful for now
+// could be useufl if interested in packet information (data len etc.)
 // SEC("lsm/socket_sock_rcv_skb")
 // int BPF_PROG(socket_sock_rcv_skb, struct sock *sk, struct sk_buff *skb)
 // {
