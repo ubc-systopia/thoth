@@ -105,7 +105,14 @@ static void get_socket_id(struct sock_entry_t *entry, char* buffer)
         sprintf(address, "%u", entry->daddr);
         sprintf(port, "%u", entry->port);
     } else {
-        getnameinfo(&entry->addr, sizeof(struct sockaddr_in), address, NI_MAXHOST, port, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+        if (entry->family == AF_INET) {
+            getnameinfo(&entry->addr, sizeof(struct sockaddr_in), address, NI_MAXHOST, port, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+        } else if (entry->family == AF_INET6) {
+            getnameinfo(&entry->addr, sizeof(struct sockaddr_in6), address, NI_MAXHOST, port, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+        } else {
+            sprintf(address, "%u", 0);
+            sprintf(port, "%u", 0);
+        }
     }
 
 	strncat(buffer, protocol, MAX_BUFFER_LEN);
