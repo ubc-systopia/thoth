@@ -72,11 +72,14 @@ struct sock_entry_t {
 struct command_entry_t {
 	uint32_t flag;
 	int pid;
-	int utime;
 	unsigned int inode_inum;
 	int args_count;
 	int args_size;
 	int proc_uid;
+	int val1;
+	int val2;
+	int val3;
+	int val4;
 	char args[ARGS_MAX][ARGS_SIZE_MAX];
 	enum file_op op;
 };
