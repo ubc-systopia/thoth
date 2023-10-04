@@ -305,24 +305,14 @@ void spade_write_edge_command(int fd, struct command_entry_t *entry, int id)
 	strncat(buf, "\"Used\",", MAX_BUFFER_LEN);
 
 	// to
-	strncat(buf, "\"to\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, command_id, MAX_BUFFER_LEN);
-	strncat(buf, "\",", MAX_BUFFER_LEN);
+	write_key_val_str(buf, "to", command_id, true);
 
 	// from
-	strncat(buf, "\"from\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, pid, MAX_BUFFER_LEN);
-	strncat(buf, "\",", MAX_BUFFER_LEN);
+	write_key_val_str(buf, "from", pid, true);
 
 	write_start_annotations(buf);
 
-	strncat(buf, "\"operation\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, operation, MAX_BUFFER_LEN);
-	strncat(buf, "\",", MAX_BUFFER_LEN);
-
+	write_key_val_str(buf, "operation", operation, true);
 	write_datetime(buf, false);
 
 	write_end_annotations(buf);
@@ -362,7 +352,7 @@ void spade_write_edge(int fd, struct entry_t *entry)
 		sprintf(operation, "%s", "mmap");
 
 	// start json
-	strncat(buf, "{", MAX_BUFFER_LEN);
+	write_start_json(buf);
 
 	// type
 	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
@@ -400,32 +390,13 @@ void spade_write_edge(int fd, struct entry_t *entry)
 	}
 
 	// annotations
-	strncat(buf, "\"annotations\":{", MAX_BUFFER_LEN);
+	write_start_annotations(buf);
 
-	strncat(buf, "\"operation\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	strncat(buf, operation, MAX_BUFFER_LEN);
-	strncat(buf, "\",", MAX_BUFFER_LEN);
+	write_key_val_str(buf, "operation", operation, true);
+	write_datetime(buf, false);
 
-	// strncat(buf, "\"utime\":", MAX_BUFFER_LEN);
-	// strncat(buf, "\"", MAX_BUFFER_LEN);
-	// strncat(buf, utime, MAX_BUFFER_LEN);
-	// strncat(buf, "\",", MAX_BUFFER_LEN);
-
-	update_datetime();
-
-
-	strncat(buf, "\"date\":", MAX_BUFFER_LEN);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-	pthread_rwlock_wrlock(&date_lock);
-	strncat(buf, date, MAX_BUFFER_LEN);
-	pthread_rwlock_unlock(&date_lock);
-	strncat(buf, "\"", MAX_BUFFER_LEN);
-
-
-	// end json
-	strncat(buf, "}}\n", MAX_BUFFER_LEN);
+	write_end_annotations(buf);
+	write_end_json(buf);
 
 	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
-
 }
