@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include "user/json.h"
 #include "net.c"
@@ -30,13 +31,17 @@ int edge_id = 0;
 
 static void update_datetime()
 {
-	struct tm *tm;
-	time_t current_time = time(NULL);
+	struct timeval curr_time;
 
-	tm = localtime(&current_time);
+	gettimeofday(&curr_time, NULL);
+	int millisec = curr_time.tv_usec / 1000;
+
+	char buffer[80];
+
+	strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&curr_time.tv_sec));
 
 	pthread_rwlock_wrlock(&date_lock);
-	strftime(date, DATE_LEN, "%Y:%m:%dT%H:%M:%S", tm);
+	sprintf(date, "%s:%03d", buffer, millisec);
 	pthread_rwlock_unlock(&date_lock);
 }
 
@@ -44,7 +49,7 @@ static void write_datetime(char *buffer, bool delim)
 {
 	update_datetime();
 
-	strncat(buffer, "\"date\":", MAX_BUFFER_LEN);
+	strncat(buffer, "\"datetime\":", MAX_BUFFER_LEN);
 	strncat(buffer, "\"", MAX_BUFFER_LEN);
 	pthread_rwlock_wrlock(&date_lock);
 	strncat(buffer, date, MAX_BUFFER_LEN);

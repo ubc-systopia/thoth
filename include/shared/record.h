@@ -20,8 +20,7 @@
 #define ARGS_MAX 8
 #define ARGS_SIZE_MAX 48
 
-#define DATE_LEN 256
-
+#define DATE_LEN 84
 extern char date[DATE_LEN];
 
 #define ENTRY_TYPE_FILE 0
