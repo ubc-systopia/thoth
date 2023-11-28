@@ -250,7 +250,7 @@ int read_path_name(struct entry_t *entry, struct dentry *dentry)
 		if (d == d->d_parent || d == NULL)
 			break;
 
-		int len = bpf_probe_read_kernel_str(&entry->file_path[i], PATH_NAME_MAX, d->d_iname);
+		int len = bpf_probe_read_kernel_str(&entry->file_path[i], PATH_NAME_MAX, d->d_name.name);
 		bpf_printk("read %u bytes", len);
 		bpf_printk("%s", entry->file_path[i]);
 		entry->file_path_depth++;
