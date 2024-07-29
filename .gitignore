@@ -54,3 +54,6 @@ dkms.conf
 linux-stable
 track.skel.h
 vmlinux.h
+
+thothd
+.vscode/
