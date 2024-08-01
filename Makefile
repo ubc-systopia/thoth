@@ -72,6 +72,8 @@ uncrustify_clean:
 
 all: btf kernel skel user uncrustify uncrustify_clean
 
+dev: kernel skel user uncrustify uncrustify_clean
+
 install:
 	sudo cp --force ./thothd /usr/bin/thothd
 	sudo cp --force ./thothd.service /etc/systemd/system/thothd.service
