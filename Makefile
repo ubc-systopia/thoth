@@ -55,7 +55,7 @@ user:
 	clang -Wall user.c -o user.o -Iinclude -c
 	clang -o thothd \
 	user.o \
-	-l:libbpf.so.0 -lpthread
+	-l:libbpf.so.1 -lpthread
 
 skel:
 	bpftool gen skeleton kernel.o > kernel.skel.h
@@ -70,7 +70,7 @@ uncrustify:
 uncrustify_clean:
 	rm *backup*~
 
-all: kernel skel user uncrustify uncrustify_clean
+all: btf kernel skel user uncrustify uncrustify_clean
 
 install:
 	sudo cp --force ./thothd /usr/bin/thothd
