@@ -52,8 +52,9 @@ Mkfile.old
 dkms.conf
 
 linux-stable
-track.skel.h
+kernel.skel.h
 vmlinux.h
 
 thothd
 .vscode/
+output/

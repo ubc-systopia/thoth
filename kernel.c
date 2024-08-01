@@ -12,7 +12,7 @@
  */
 
 #include <linux/limits.h>
-#include <linux/mman.h>
+#include <asm/mman.h>
 
 #include "vmlinux.h"
 #include "shared/record.h"
@@ -38,7 +38,7 @@ char _license[] SEC("license") = "GPL";
 
 struct inode_elem {
 	uint32_t id;
-	uint8_t flag;
+	uint8_t flag; // When set to TRACKED_BIT, the program will track the operations on the file this inode represents
 	struct bpf_spin_lock lock;
 };
 
@@ -56,6 +56,7 @@ struct {
 } ringbuf SEC(".maps");
 
 // list of tracking dir inodes
+// That is, a list of inodes representing directories where the program is tracking files
 struct {
 	__uint(type, BPF_MAP_TYPE_ARRAY);
 	__type(key, uint32_t);
@@ -64,6 +65,7 @@ struct {
 } inode_map SEC(".maps");
 
 // cache for inodes in tracking dir
+// That is, files that might be within tracking directories or not, depending on the value of the flag in the inode_elem
 struct {
 	__uint(type, BPF_MAP_TYPE_INODE_STORAGE);
 	__uint(map_flags, BPF_F_NO_PREALLOC);
@@ -81,7 +83,7 @@ struct {
 #define MAY_OPEN                0x00000020
 #define MAY_CHDIR               0x00000040
 
-#define IS_PRIVATE(inode)       ((inode)->i_flags & S_PRIVATE)
+#define IS_PRIVATE(inode)       ((inode)->i_flags &S_PRIVATE)
 
 #define is_inode_dir(inode)             S_ISDIR(inode->i_mode)
 #define is_inode_socket(inode)          S_ISSOCK(inode->i_mode)
@@ -107,11 +109,11 @@ struct {
 #define inode_set_tracked(inode)      inode_set_flag(inode, TRACKED_BIT)
 #define inode_is_tracked(inode)       inode_check_flag(inode, TRACKED_BIT)
 
-#define _(P)							\
-	({							\
-		typeof(P) val = 0;				\
-		bpf_probe_read_kernel(&val, sizeof(val), &(P));	\
-		val;						\
+#define _(P)                                                    \
+	({                                                      \
+		typeof(P) val = 0;                              \
+		bpf_probe_read_kernel(&val, sizeof(val), &(P)); \
+		val;                                            \
 	})
 
 
@@ -260,6 +262,11 @@ int read_path_name(struct entry_t *entry, struct dentry *dentry)
 	return 0;
 }
 
+// This function attaches to the Linux Security Module 'file_permission' hook,
+// it will execute whenever a file operation requires checking the permissions,
+// i.e., reading, writing, or executing the file.
+// We use it to log when a read, write, and exec events occurs on a file, populate an
+// entry_t object with the respective information and then send it to the ringbuf
 SEC("lsm/file_permission")
 int BPF_PROG(file_permission, struct file *file, int mask)
 {
@@ -327,6 +334,7 @@ int BPF_PROG(file_permission, struct file *file, int mask)
 	return 0;
 }
 
+// JNOTE: Not sure where this gets used yet
 SEC("lsm/bprm_creds_for_exec")
 int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 {
@@ -353,6 +361,9 @@ int BPF_PROG(bprm_creds_for_exec, struct linux_binprm *bprm)
 	return 0;
 }
 
+// This function attaches to the tracepoint event that triggers during an "execve" system call,
+// i.e., a new process is executed.
+// In our provenance this looks like an "executed_command" set of nodes and edges
 SEC("tracepoint/syscalls/sys_enter_execve")
 int tracepoint__syscalls__sys_enter_execve(struct trace_event_raw_sys_enter *ctx)
 {
