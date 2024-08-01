@@ -75,15 +75,35 @@ int add_inode(struct kernel *skel, uint32_t index, uint64_t value)
 	}
 	map_fd = bpf_object__find_map_fd_by_name(skel->obj, "inode_map");
 	id = value;
-	bpf_map_update_elem(map_fd, &inode_track_index, &id, BPF_ANY);
+	// TODO this needs to actually find a way to keep track of indices so
+	// that they can be removed and reused
+	bpf_map_update_elem(map_fd, &index, &id, BPF_ANY);
 	inode_track_index++;
 	return 0;
 }
 
 // TODO
-int remove_inode(struct kernel *skel, uint32_t index, uint64_t value)
+int remove_inode(struct kernel *skel, uint32_t index)
 {
-	return 0;
+	int map_fd;
+	int ret;
+	uint64_t wipe = 0;
+
+	if (inode_track_index == 0) {
+		printf("No directories currently tracked\r\n");
+		return 0;
+	}
+
+	map_fd = bpf_object__find_map_fd_by_name(skel->obj, "inode_map");
+
+	// TODO this needs to actually find a way to keep track of indices so
+	// that they can be removed and reused, see: add_inode
+	uint32_t key = index;
+	ret = bpf_map_update_elem(map_fd, &key, &wipe, BPF_ANY);
+
+	inode_track_index--;
+
+	return ret;
 }
 
 void write_socket(struct entry_t *entry)
@@ -199,10 +219,11 @@ static int cli_process_msg(struct op_msg *msg, struct err_msg *err)
 		struct dirent *dir_entry = readdir(dir);
 		if (dir_entry == NULL) {
 			err->err = ERR_OK;
-			snprintf(err->msg, MSG_LEN, "error adding directory to tracked directories");
+			snprintf(err->msg, MSG_LEN, "error removing directory from tracked directories");
 		}
 		// TODO: get response from remove
-		remove_inode(skel, 0, dir_entry->d_ino);
+		if (remove_inode(skel, 0) != 0)
+			perror("Could not remove tracked dir");
 	}
 	return 0;
 }
