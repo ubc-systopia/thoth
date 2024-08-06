@@ -138,6 +138,21 @@ void write_command(struct entry_t *entry)
 	pthread_mutex_unlock(&file_lock);
 }
 
+void write_process(struct entry_t *entry)
+{
+	struct proc_entry_t *c = (struct proc_entry_t *)entry;
+
+	if (c->op == FORK) {
+		pthread_mutex_lock(&file_lock);
+		spade_write_trigger_node(fd, c->parent_pid);
+		spade_write_trigger_node(fd, c->child_pid);
+		spade_write_trigger_edge(fd, c);
+		pthread_mutex_unlock(&file_lock);
+	} else if (c->op == CLONE) {
+		// TODO
+	}
+
+}
 
 void write_to_file(struct entry_t *entry, char *buffer)
 {
@@ -149,6 +164,8 @@ void write_to_file(struct entry_t *entry, char *buffer)
 		write_socket(entry);
 	else if (entry->flag == ENTRY_TYPE_COMMAND)
 		write_command(entry);
+	else if (entry->flag == ENTRY_TYPE_PROCESS)
+		write_process(entry);
 }
 
 // this is a temporary fix for resolving the file path
@@ -328,7 +345,7 @@ int main(int argc, char *argv[])
 	ringbuf = ring_buffer__new(map_fd, buf_process_entry, NULL, NULL);
 
 	while (ring_buffer__poll(ringbuf, -1) >= 0) {
-		// collect prov in callback
+		// collect prov in callback buf_process_entry
 	}
 close_prog:
 	close(fd);

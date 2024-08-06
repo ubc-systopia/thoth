@@ -326,6 +326,71 @@ void spade_write_edge_command(int fd, struct command_entry_t *entry, int id)
 	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
 }
 
+void spade_write_trigger_node(int fd, int proc_pid)
+{
+	char buf[MAX_BUFFER_LEN];
+
+	buf[0] = '\0';
+
+	char pid[32];
+
+	sprintf(pid, "%u", proc_pid);
+
+	// start json
+	write_start_json(buf);
+
+	// type
+	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"Activity\",", MAX_BUFFER_LEN);
+
+	// id
+	strncat(buf, "\"id\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"", MAX_BUFFER_LEN);
+	strncat(buf, pid, MAX_BUFFER_LEN);
+	strncat(buf, "\",", MAX_BUFFER_LEN);
+
+	// annotations
+	strncat(buf, "\"annotations\":{", MAX_BUFFER_LEN);
+
+	write_key_val_str(buf, "pid", pid, false);
+
+	// end json
+	strncat(buf, "}}\n", MAX_BUFFER_LEN);
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
+}
+
+void spade_write_trigger_edge(int fd, struct proc_entry_t *entry)
+{
+	char buf[MAX_BUFFER_LEN];
+
+	char parent_pid[32];
+	char child_pid[32];
+	char operation[32];
+
+	sprintf(parent_pid, "%u", entry->parent_pid);
+	sprintf(child_pid, "%u", entry->child_pid);
+	sprintf(operation, "%s", "fork");
+
+	init_buffer(buf);
+	write_start_json(buf);
+
+	strncat(buf, "\"type\":", MAX_BUFFER_LEN);
+	strncat(buf, "\"WasTriggeredBy\",", MAX_BUFFER_LEN);
+
+	write_key_val_str(buf, "to", child_pid, true);
+	write_key_val_str(buf, "from", parent_pid, true);
+
+	write_start_annotations(buf);
+
+	write_key_val_str(buf, "operation", operation, true);
+	write_datetime(buf, false);
+
+	write_end_annotations(buf);
+	write_end_json(buf);
+
+	write(fd, buf, strnlen(buf, MAX_BUFFER_LEN));
+}
+
 void spade_write_edge(int fd, struct entry_t *entry)
 {
 	char buf[MAX_BUFFER_LEN];

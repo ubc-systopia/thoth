@@ -477,6 +477,9 @@ int BPF_PROG(socket_connect, struct socket *sock, struct sockaddr *address, int 
 // 	return 0;
 // }
 
+// This function executed when the 'mmap' system call executes.
+// We use to track files that a process loads for its use,
+// many system libraries are loaded this way
 SEC("lsm/mmap_file")
 int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long prot, unsigned long flags)
 {
@@ -506,5 +509,31 @@ int BPF_PROG(mmap_file, struct file *file, unsigned long reqprot, unsigned long 
 
 	read_path_name(&new_entry, file->f_path.dentry);
 	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct entry_t), 0);
+	return 0;
+}
+
+
+SEC("tracepoint/sched/sched_process_fork")
+int trace_sched_process_fork(struct trace_event_raw_sched_process_fork *ctx)
+{
+	struct task_struct *current_task;
+
+	current_task = (struct task_struct *)bpf_get_current_task_btf();
+
+	// If the parent process working directory is not in a tracked directory return
+	if (check_tracking_no_lock(current_task->fs->pwd.dentry->d_inode, current_task->fs->pwd.dentry) == 0)
+		return 0;
+
+	struct proc_entry_t new_entry = {
+		.flag = ENTRY_TYPE_PROCESS,
+		.parent_pid = ctx->parent_pid,
+		.child_pid = ctx->child_pid,
+		.utime = current_task->utime,
+		.gtime = current_task->gtime,
+		.proc_guid = current_task->tgid,
+		.op = FORK
+	};
+
+	bpf_ringbuf_output(&ringbuf, &new_entry, sizeof(struct proc_entry_t), 0);
 	return 0;
 }

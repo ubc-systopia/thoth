@@ -23,9 +23,12 @@
 #define DATE_LEN 84
 extern char date[DATE_LEN];
 
+// These macros are used to determine which type of entry
+// an eBPF function has pushed to the ring buffer
 #define ENTRY_TYPE_FILE 0
 #define ENTRY_TYPE_SOCK 1
 #define ENTRY_TYPE_COMMAND 2
+#define ENTRY_TYPE_PROCESS 3
 
 enum file_op {
 	READ    = 1,
@@ -42,6 +45,11 @@ enum sock_op {
 	RCV_SKB = 4
 };
 
+enum process_op {
+	FORK    = 1,
+	CLONE   = 2,
+};
+
 struct entry_t {
 	uint32_t flag;
 	int pid;
@@ -55,6 +63,17 @@ struct entry_t {
 	int file_path_depth;
 	char file_path[PATH_DEPTH_MAX][PATH_NAME_MAX];
 	enum file_op op;
+};
+
+// This struct is use when a process forks or clones so needs two pid entries
+struct proc_entry_t {
+	uint32_t flag;
+	int parent_pid;
+	int child_pid;
+	int utime;
+	int gtime;
+	int proc_guid;
+	enum process_op op;
 };
 
 struct sock_entry_t {
